@@ -123,15 +123,5 @@ func deriveAuthType(explicit string, rec map[string]string) string {
 func init() {
 	getCmd.AddCommand(stateCmd)
 
-	stateCmd.Flags().StringVar(&flagTLD, "tld", "", "TLD (e.g., example) [required unless in credentials]")
-	stateCmd.Flags().StringVar(&flagEnv, "env", "", "Environment: prod or ote")
-	stateCmd.Flags().StringVar(&flagAuth, "auth", "", "Auth type: basic or tlsa")
-	stateCmd.Flags().StringVar(&flagUser, "username", "", "Username for basic auth")
-	stateCmd.Flags().StringVar(&flagPass, "password", "", "Password for basic auth")
-	stateCmd.Flags().StringVar(&flagCertPEM, "cert-pem", "", "PEM-encoded client certificate for TLSA (string)")
-	stateCmd.Flags().StringVar(&flagKeyPEM, "key-pem", "", "PEM-encoded client key for TLSA (string)")
-	stateCmd.Flags().StringVar(&flagVersion, "version", "", "API version (default v2)")
-	stateCmd.Flags().StringVar(&flagEntity, "entity", "", "Entity (default ry)")
-
 	// TLD can come from flag, credentials (tld key), or profile name matching the TLD.
 }

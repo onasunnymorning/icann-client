@@ -77,6 +77,32 @@ MOSAPI endpoints are versioned and scoped by entity and TLD/registrar ID. This l
 - Base path format: `/<entity>/<tld-or-registrar-id>/<version>`
 - Example (registry entity, TLD "example", v2): `/ry/example/v2/monitoring/state`
 
+### Domain METRICA (library)
+
+Use the MOSAPI client to retrieve METRICA (formerly DAAR) reports:
+
+```go
+ctx := context.Background()
+msc, _ := mosapi.New(cfg)
+
+// Latest report for the configured TLD/entity/version
+latest, err := msc.GetMetricaLatest(ctx)
+if err != nil { /* handle */ }
+fmt.Println("last modified:", latest.LastModified)
+
+// Report for a specific date (YYYY-MM-DD)
+rep, err := msc.GetMetricaByDate(ctx, "2024-02-20")
+if err != nil { /* handle */ }
+
+// List available reports (optionally filtered by start/end)
+lists, err := msc.ListMetricaReports(ctx, "2025-01-01", "2025-01-31")
+if err != nil { /* handle */ }
+_ = lists
+```
+
+Notes:
+- For latest and date-specific calls, the HTTP Last-Modified header is exposed as `LastModified` on the response.
+
 ## CLI
 
 This repo includes a Cobra-based CLI at `cmd/icann`.
@@ -140,6 +166,32 @@ Available flags on `icann mosapi get state`:
 - `--credentials-file` (default env ICANN_SHARED_CREDENTIALS_FILE or `~/.icann/credentials`)
 
 Output is pretty-printed JSON of the `StateResponse`.
+
+- Domain METRICA
+
+	- Latest report
+
+	```
+	./icann mosapi get metrica latest --tld example \
+		--credentials-file ~/.icann/credentials
+	```
+
+	- Report for a specific date
+
+	```
+	./icann mosapi get metrica date 2024-02-20 --tld example \
+		--credentials-file ~/.icann/credentials
+	```
+
+	- List available reports (optional filters)
+
+	```
+	./icann mosapi get metrica lists --tld example \
+		--start-date 2025-01-01 --end-date 2025-01-31 \
+		--credentials-file ~/.icann/credentials
+	```
+
+	Output is pretty-printed JSON matching the MOSAPI spec. For latest and per-date queries, the HTTP Last-Modified header is captured in the `LastModified` field of the response object.
 
 Notes:
 - Runtime errors (e.g., HTTP 4xx/5xx) do not print the CLI usage banner.
