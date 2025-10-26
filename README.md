@@ -23,6 +23,21 @@ go get github.com/onasunnymorning/icann-client@v0.1.0
 
 Until v1, versions are tagged with `v0.x.y` and don’t require a module path suffix.
 
+### Homebrew (CLI)
+
+Once the tap is set up (see below), install the CLI with Homebrew:
+
+```
+brew tap onasunnymorning/tap
+brew install icann
+```
+
+To update:
+
+```
+brew update && brew upgrade icann
+```
+
 ## Usage
 
 ### MOSAPI with shared auth (recommended structure)
@@ -126,6 +141,17 @@ Notes:
 ## CLI
 
 This repo includes a Cobra-based CLI at `cmd/icann`.
+### Homebrew tap setup (maintainers)
+
+We publish a Homebrew formula via GoReleaser to the tap repository `onasunnymorning/homebrew-tap`.
+
+One-time setup:
+
+1. Create the repo `onasunnymorning/homebrew-tap` (public).
+2. In this repo (icann-client), add a repo secret named `TAP_GITHUB_TOKEN` with a Personal Access Token that has `repo` scope and write access to `homebrew-tap`.
+3. Cut a new tag (e.g., `v0.1.1`); the release workflow will generate/update the formula automatically.
+
+Users then run `brew tap onasunnymorning/tap && brew install icann`.
 
 Notes:
 - The legacy command groups `mosapi` and `rri` are deprecated; use the flattened commands under `icann get ...` instead.

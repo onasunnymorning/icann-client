@@ -33,4 +33,5 @@ jobs:
           version: latest
           args: release --clean
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # Use a PAT with access to both this repo and the tap repo if provided; fallback to default token.
+          GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}

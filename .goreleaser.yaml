@@ -41,3 +41,21 @@ changelog:
 release:
   draft: false
   prerelease: auto
+
+brews:
+  - name: icann
+    repository:
+      owner: onasunnymorning
+      name: homebrew-tap
+      branch: main
+    commit_author:
+      name: goreleaserbot
+      email: goreleaser@github.com
+    homepage: https://github.com/onasunnymorning/icann-client
+    description: "ICANN MOSAPI and RRI CLI"
+    license: MIT
+    # Install the binary; bottles will be handled by Homebrew infra when/if configured.
+    install: |
+      bin.install "icann"
+    test: |
+      system "#{bin}/icann", "--help"
