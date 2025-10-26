@@ -6,17 +6,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
-- API surface audit completed; small breaking changes made while still in v0.
-- BREAKING: mosapi.Client.GetStateResponse now accepts a context.Context parameter.
-- BREAKING: Use int64 for Unix timestamp fields in MOSAPI types (LastUpdateApiDb, Incident StartTime/EndTime).
-- Added: client.HTTPError typed error for non-2xx responses (includes status code, method, URL).
-- Expanded: allow registrar entity (rr) in client.Config validation.
-- Docs: badges, stability notes, and examples polishing.
 - Optional: Homebrew tap for CLI distribution.
 
 ## [v0.1.0] - 2025-10-26
 
 ### Added
+- Base helpers:
+  - client.DoJSON for JSON requests/responses with typed error handling.
+  - client.HTTPError typed error for non-2xx responses (includes status code, method, URL).
 - Shared base client (`client`) with:
   - BASIC auth via custom RoundTripper.
   - TLS client certificate ("TLSA") using PEM strings (no file paths).
@@ -25,6 +22,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   - Monitoring state endpoint (`GetStateResponse`).
   - Domain METRICA endpoints: `GetMetricaLatest`, `GetMetricaByDate`, `ListMetricaReports`.
   - `Last-Modified` header captured for latest/date calls.
+- MOSAPI convenience:
+  - StateResponse.LastUpdatedTime(), Incident.StartTimeTime(), Incident.EndTimeTime() helpers.
 - RRI package (`rri`) with `GetRyEscrowReportStatus` (uses GET to avoid HTTP/2 HEAD data warnings).
 - Cobra-based CLI (`icann`) with flattened UX:
   - `icann get tld status`
@@ -40,6 +39,8 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Package docs and examples for pkg.go.dev.
 
 ### Changed
+- BREAKING: mosapi.Client.GetStateResponse now accepts a context.Context parameter.
+- BREAKING: Use int64 for Unix timestamp fields in MOSAPI types (LastUpdateApiDb, Incident StartTime/EndTime).
 - Flattened CLI; legacy `mosapi` and `rri` groups are deprecated/hidden.
 
 ### Fixed

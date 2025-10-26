@@ -3,6 +3,9 @@ package client
 import (
 	"context"
 	"crypto/tls"
+	"encoding/json"
+	"errors"
+	"bytes"
 	"io"
 	"net/http"
 	"net/url"
@@ -131,3 +134,50 @@ func (c *Client) WithBaseURL(raw string) error {
 
 // Config returns a copy of the validated configuration used to construct the client.
 func (c *Client) Config() Config { return c.cfg }
+
+// DoJSON issues an HTTP request with optional JSON body and decodes a JSON response into out.
+// If in is non-nil, it will be JSON-encoded and sent with Content-Type: application/json.
+// If out is non-nil and the response has a JSON Content-Type, it will be decoded.
+// Returns a *HTTPError for non-2xx responses.
+func (c *Client) DoJSON(ctx context.Context, method, path string, in any, out any) (*http.Response, error) {
+	var body io.Reader
+	if in != nil {
+		buf := &bytes.Buffer{}
+		if err := json.NewEncoder(buf).Encode(in); err != nil {
+			return nil, err
+		}
+		body = buf
+	}
+	req, err := c.NewRequest(ctx, method, path, body)
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Accept", "application/json")
+	if in != nil {
+		req.Header.Set("Content-Type", "application/json")
+	}
+	resp, err := c.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		// Drain and close body to allow connection reuse
+		io.Copy(io.Discard, resp.Body)
+		resp.Body.Close()
+		return resp, &HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
+	}
+	if out != nil {
+		// Best-effort JSON decode; handle empty body
+		decErr := json.NewDecoder(resp.Body).Decode(out)
+		if decErr != nil {
+			// If the body is empty (EOF before any bytes), tolerate when out is non-nil by returning a clearer error
+			if errors.Is(decErr, io.EOF) {
+				// nothing to decode; treat as success
+				return resp, nil
+			}
+			resp.Body.Close()
+			return resp, decErr
+		}
+	}
+	return resp, nil
+}

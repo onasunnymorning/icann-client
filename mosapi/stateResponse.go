@@ -1,5 +1,7 @@
 package mosapi
 
+import "time"
+
 type StateResponse struct {
 	TLD             string `json:"tld"`
 	LastUpdateApiDb int64  `json:"lastUpdateApiDatabase"` // Unix timestamp seconds when monitoring info was last updated.
@@ -63,4 +65,29 @@ func (s *StateResponse) HasIncidents() bool {
 		}
 	}
 	return false
+}
+
+// LastUpdatedTime returns LastUpdateApiDb as a UTC time.
+func (s StateResponse) LastUpdatedTime() time.Time {
+	if s.LastUpdateApiDb == 0 {
+		return time.Unix(0, 0).UTC()
+	}
+	return time.Unix(s.LastUpdateApiDb, 0).UTC()
+}
+
+// StartTimeTime returns the Incident start time as a UTC time.
+func (i Incident) StartTimeTime() time.Time {
+	if i.StartTime == 0 {
+		return time.Unix(0, 0).UTC()
+	}
+	return time.Unix(i.StartTime, 0).UTC()
+}
+
+// EndTimeTime returns the Incident end time as a UTC time, if present.
+func (i Incident) EndTimeTime() *time.Time {
+	if i.EndTime == nil || *i.EndTime == 0 {
+		return nil
+	}
+	t := time.Unix(*i.EndTime, 0).UTC()
+	return &t
 }
