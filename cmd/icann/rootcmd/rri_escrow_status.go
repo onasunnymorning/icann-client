@@ -51,7 +51,7 @@ var rriEscrowStatusCmd = &cobra.Command{
 }
 
 func init() {
-	rriGetCmd.AddCommand(rriEscrowCmd)
+	getCmd.AddCommand(rriEscrowCmd)
 	rriEscrowCmd.AddCommand(rriEscrowStatusCmd)
 
 	rriEscrowStatusCmd.Flags().StringVar(&flagDate, "date", "", "Report date (YYYY-MM-DD)")

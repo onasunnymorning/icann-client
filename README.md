@@ -124,6 +124,9 @@ Notes:
 
 This repo includes a Cobra-based CLI at `cmd/icann`.
 
+Notes:
+- The legacy command groups `mosapi` and `rri` are deprecated; use the flattened commands under `icann get ...` instead.
+
 ### Build
 
 ```
@@ -163,14 +166,14 @@ Flags always override file/env values. For TLSA, prefer certificate_pem and key_
 
 ### Commands
 
-- Get MOSAPI monitoring state
+- Get TLD monitoring state
 
 ```
-./icann mosapi get state --tld example \
+./icann get tld status --tld example \
 	--credentials-file ~/.icann/credentials
 ```
 
-Available flags on `icann mosapi get state`:
+Available flags on `icann get ...` commands:
 
 - `--tld` TLD (required if not provided in credentials)
 - `--env` prod|ote
@@ -189,21 +192,21 @@ Output is pretty-printed JSON of the `StateResponse`.
 	- Latest report
 
 	```
-	./icann mosapi get metrica latest --tld example \
+	./icann get metrica latest --tld example \
 		--credentials-file ~/.icann/credentials
 	```
 
 	- Report for a specific date
 
 	```
-	./icann mosapi get metrica date 2024-02-20 --tld example \
+	./icann get metrica date 2024-02-20 --tld example \
 		--credentials-file ~/.icann/credentials
 	```
 
 	- List available reports (optional filters)
 
 	```
-	./icann mosapi get metrica lists --tld example \
+	./icann get metrica lists --tld example \
 		--start-date 2025-01-01 --end-date 2025-01-31 \
 		--credentials-file ~/.icann/credentials
 	```
@@ -215,7 +218,7 @@ Output is pretty-printed JSON of the `StateResponse`.
 		- Check Ry Escrow report status for a date
 
 		```
-		./icann rri get escrow status --tld example \
+		./icann get escrow status --tld example \
 			--date 2025-10-22 \
 			--credentials-file ~/.icann/credentials
 		```

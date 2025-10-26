@@ -8,4 +8,4 @@ var getCmd = &cobra.Command{
 	Short: "Get resources",
 }
 
-func init() { mosapiCmd.AddCommand(getCmd) }
+func init() { RootCmd.AddCommand(getCmd) }

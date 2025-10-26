@@ -4,8 +4,10 @@ import "github.com/spf13/cobra"
 
 // rriCmd groups RRI-related commands
 var rriCmd = &cobra.Command{
-	Use:   "rri",
-	Short: "RRI operations",
+	Use:        "rri",
+	Short:      "RRI operations (deprecated)",
+	Hidden:     true,
+	Deprecated: "Use `icann get escrow status` instead.",
 }
 
 func init() { RootCmd.AddCommand(rriCmd) }
