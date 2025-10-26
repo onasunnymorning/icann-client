@@ -1,5 +1,8 @@
 # icann-client
 
+[![CI](https://github.com/onasunnymorning/icann-client/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/onasunnymorning/icann-client/actions/workflows/ci.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/onasunnymorning/icann-client.svg)](https://pkg.go.dev/github.com/onasunnymorning/icann-client)
+
 Go client library for ICANN MOSAPI (and future RRI) with pluggable authentication.
 
 ## Features
@@ -240,8 +243,14 @@ Notes:
 
 ## Versioning
 
-- Semantic version tags will be used (start with `v0.1.0`).
-- When/if the API stabilizes to v1, the module path will remain the same; major versions `v2+` would require a path suffix per Go Module rules.
+## Stability and Versioning
+
+- The module follows SemVer. While in v0, minor versions (v0.x) may include breaking changes.
+- Public API stability will be guaranteed starting at v1.0.0. We’ll avoid breaking changes in v0 unless necessary and document them in the Changelog.
+- CLI deprecations: legacy command groups `mosapi`/`rri` remain available but hidden and deprecated; use the flattened `icann get ...` commands.
+- The module path is `github.com/onasunnymorning/icann-client` and will remain for v1. Major versions `v2+` will use the Go Modules path suffix convention.
+
+See `CHANGELOG.md` for detailed changes.
 
 ## Roadmap
 
