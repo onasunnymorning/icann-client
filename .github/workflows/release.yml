@@ -33,5 +33,8 @@ jobs:
           version: latest
           args: release --clean
         env:
-          # Use a PAT with access to both this repo and the tap repo if provided; fallback to default token.
+          # IMPORTANT: If set, TAP_GITHUB_TOKEN must have Contents: Read & write on BOTH repos:
+          # - onasunnymorning/icann-client (to create the release)
+          # - onasunnymorning/homebrew-tap (to push the formula)
+          # Otherwise, the default GITHUB_TOKEN will only publish the release and will NOT push to the tap.
           GITHUB_TOKEN: ${{ secrets.TAP_GITHUB_TOKEN || secrets.GITHUB_TOKEN }}

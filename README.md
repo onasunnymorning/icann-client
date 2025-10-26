@@ -148,8 +148,8 @@ We publish a Homebrew formula via GoReleaser to the tap repository `onasunnymorn
 One-time setup:
 
 1. Create the repo `onasunnymorning/homebrew-tap` (public).
-2. In this repo (icann-client), add a repo secret named `TAP_GITHUB_TOKEN` with a Personal Access Token that has `repo` scope and write access to `homebrew-tap`.
-3. Cut a new tag (e.g., `v0.1.1`); the release workflow will generate/update the formula automatically.
+2. In this repo (icann-client), add a repo secret named `TAP_GITHUB_TOKEN` with a Fine‑grained PAT that has Contents: Read & write on BOTH repositories: `onasunnymorning/icann-client` and `onasunnymorning/homebrew-tap` (grant org SSO if applicable). Classic PAT with `repo` scope also works if you prefer.
+3. Cut a new tag (e.g., `v0.1.1` or re-run the failed workflow after updating the secret); the release workflow will generate/update the formula automatically.
 
 Users then run `brew tap onasunnymorning/tap && brew install icann`.
 
