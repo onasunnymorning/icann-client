@@ -6,7 +6,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
-- API surface audit in progress; small breaking changes may occur until v1.0.0.
+- API surface audit completed; small breaking changes made while still in v0.
+- BREAKING: mosapi.Client.GetStateResponse now accepts a context.Context parameter.
+- BREAKING: Use int64 for Unix timestamp fields in MOSAPI types (LastUpdateApiDb, Incident StartTime/EndTime).
+- Added: client.HTTPError typed error for non-2xx responses (includes status code, method, URL).
+- Expanded: allow registrar entity (rr) in client.Config validation.
 - Docs: badges, stability notes, and examples polishing.
 - Optional: Homebrew tap for CLI distribution.
 

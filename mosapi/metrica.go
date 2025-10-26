@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+
+	base "github.com/onasunnymorning/icann-client/client"
 )
 
 // MetricaDomainListLatest represents the latest or dated METRICA domain list report.
@@ -56,10 +58,10 @@ func (c *Client) GetMetricaLatest(ctx context.Context) (*MetricaDomainListLatest
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("metrica latest not available: %d %s %s", resp.StatusCode, req.Method, req.URL.String())
+		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get metrica latest: %d %s %s", resp.StatusCode, req.Method, req.URL.String())
+		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
 	}
 	var out MetricaDomainListLatest
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
@@ -83,10 +85,10 @@ func (c *Client) GetMetricaByDate(ctx context.Context, date string) (*MetricaDom
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, fmt.Errorf("metrica report not available for date %s: %d %s %s", date, resp.StatusCode, req.Method, req.URL.String())
+		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
 	}
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to get metrica report for %s: %d %s %s", date, resp.StatusCode, req.Method, req.URL.String())
+		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
 	}
 	var out MetricaDomainListLatest
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
@@ -121,7 +123,7 @@ func (c *Client) ListMetricaReports(ctx context.Context, startDate, endDate stri
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("failed to list metrica reports: %d %s %s", resp.StatusCode, req.Method, req.URL.String())
+		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
 	}
 	var out MetricaDomainLists
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {

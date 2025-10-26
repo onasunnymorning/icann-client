@@ -73,7 +73,7 @@ var stateCmd = &cobra.Command{
 			return err
 		}
 		// Execute request
-		sr, err := cli.GetStateResponse()
+		sr, err := cli.GetStateResponse(cmd.Context())
 		if err != nil {
 			return err
 		}

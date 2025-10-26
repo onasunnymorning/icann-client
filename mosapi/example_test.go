@@ -29,7 +29,7 @@ func ExampleClient_GetStateResponse() {
 	c, _ := mosapi.New(cfg)
 	_ = c.WithBaseURL(srv.URL)
 
-	sr, _ := c.GetStateResponse()
+	sr, _ := c.GetStateResponse(context.Background())
 	fmt.Println(sr.Status)
 	// Output: Up
 }

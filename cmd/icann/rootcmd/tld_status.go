@@ -20,7 +20,7 @@ var tldStatusCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		sr, err := cli.GetStateResponse()
+		sr, err := cli.GetStateResponse(cmd.Context())
 		if err != nil {
 			return err
 		}

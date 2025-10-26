@@ -50,7 +50,7 @@ func TestCheckRyEscrowReport(t *testing.T) {
 			name:           "Unexpected status code (status 500)",
 			statusCode:     http.StatusInternalServerError,
 			expectedStatus: "",
-			expectedError:  "unexpected status code: 500",
+			expectedError:  "http error: 500",
 			mockError:      nil,
 		},
 		{

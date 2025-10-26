@@ -1,6 +1,7 @@
 package mosapi
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -53,7 +54,7 @@ func TestGetStateResponse(t *testing.T) {
 		t.Fatalf("WithBaseURL: %v", err)
 	}
 
-	got, err := cli.GetStateResponse()
+	got, err := cli.GetStateResponse(context.Background())
 	if err != nil {
 		t.Fatalf("GetStateResponse: %v", err)
 	}

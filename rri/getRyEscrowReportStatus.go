@@ -63,6 +63,6 @@ func (c *Client) GetRyEscrowReportStatus(ctx context.Context, date time.Time) (*
 		rs.Status = RY_RDEReport_PENDING
 		return rs, nil
 	default:
-		return nil, fmt.Errorf("unexpected status code: %d for %s %s", resp.StatusCode, req.Method, req.URL.String())
+		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
 	}
 }

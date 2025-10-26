@@ -2,7 +2,7 @@ package mosapi
 
 type StateResponse struct {
 	TLD             string `json:"tld"`
-	LastUpdateApiDb int    `json:"lastUpdateApiDatabase"` // a JSON number that contains the Unix time stamp of the date and time that the monitoring information provided in the MoSAPI was last updated from the monitoring system central database.
+	LastUpdateApiDb int64  `json:"lastUpdateApiDatabase"` // Unix timestamp seconds when monitoring info was last updated.
 	// Status: the current status of the Service. The possible values are:
 	// Up: all of the monitored Services are up.
 	// Down: one or more of the monitored Services are down.
@@ -41,8 +41,8 @@ func (s *TestedService) HasIncidents() bool {
 // Incident is a struct that represents an incident in the MOSAPI
 type Incident struct {
 	IncidentID    string `json:"incidentID"`
-	EndTime       *int   `json:"endTime"`
-	StartTime     int    `json:"startTime"`
+	EndTime       *int64 `json:"endTime"`
+	StartTime     int64  `json:"startTime"`
 	FalsePositive bool   `json:"falsePositive"`
 	State         string `json:"state"`
 }

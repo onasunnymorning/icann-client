@@ -38,7 +38,7 @@ var (
 	validServices = []string{ServiceEPP, ServiceDNS, ServiceDNSSEC, ServiceRDDS}
 
 	// validEntities is a list of valid entities we accept
-	validEntities = []string{EntityRegistry}
+	validEntities = []string{EntityRegistry, EntityRegistrar}
 
 	// validVersions is a list of valid versions we accept
 	validVersions = []string{V2}
