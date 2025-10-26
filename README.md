@@ -70,6 +70,23 @@ Notes:
 
 An `rri` subpackage is scaffolded and will follow the same pattern; both `mosapi` and `rri` will share the same base client and auth configuration so you can reuse credentials easily.
 
+### RRI (library)
+
+Use the RRI client to check registry escrow (Ry Escrow) report status for a date:
+
+```go
+import (
+	base "github.com/onasunnymorning/icann-client/client"
+	"github.com/onasunnymorning/icann-client/rri"
+)
+
+cfg := base.Config{ TLD: "example", AuthType: base.AUTH_TYPE_BASIC, Username: "user", Password: "pass" }
+rc, _ := rri.New(cfg)
+st, err := rc.GetRyEscrowReportStatus(context.Background(), time.Date(2025,10,22,0,0,0,0,time.UTC))
+if err != nil { /* handle */ }
+fmt.Println(st.Status) // "received" or "pending"
+```
+
 ### MOSAPI URL structure
 
 MOSAPI endpoints are versioned and scoped by entity and TLD/registrar ID. This library composes the path automatically from `Config.Entity`, `Config.TLD`, and `Config.Version`.
@@ -192,6 +209,27 @@ Output is pretty-printed JSON of the `StateResponse`.
 	```
 
 	Output is pretty-printed JSON matching the MOSAPI spec. For latest and per-date queries, the HTTP Last-Modified header is captured in the `LastModified` field of the response object.
+
+	- RRI
+
+		- Check Ry Escrow report status for a date
+
+		```
+		./icann rri get escrow status --tld example \
+			--date 2025-10-22 \
+			--credentials-file ~/.icann/credentials
+		```
+
+		Output is a small JSON object like:
+
+		```json
+		{
+			"Type": "ry-escrow",
+			"TLD": "example",
+			"Date": "2025-10-22T00:00:00Z",
+			"Status": "received"
+		}
+		```
 
 Notes:
 - Runtime errors (e.g., HTTP 4xx/5xx) do not print the CLI usage banner.
