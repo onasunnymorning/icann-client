@@ -15,7 +15,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        go: [ '1.22.x', '1.23.x' ]
+        go: [ '1.23.x', '1.24.x' ]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,12 +35,16 @@ jobs:
       - name: Vet
         run: go vet ./...
 
-      - name: Install staticcheck (Linux only)
-        if: runner.os == 'Linux'
-        run: go install honnef.co/go/tools/cmd/staticcheck@latest
+      - name: Install staticcheck (Linux only, Go 1.24+)
+        if: runner.os == 'Linux' && (matrix.go == '1.24.x')
+        run: |
+          # Install staticcheck using the same Go version as the matrix
+          go install honnef.co/go/tools/cmd/staticcheck@latest
+          # Verify staticcheck works with current Go version
+          staticcheck -version
 
-      - name: Run staticcheck (Linux only)
-        if: runner.os == 'Linux'
+      - name: Run staticcheck (Linux only, Go 1.24+)
+        if: runner.os == 'Linux' && (matrix.go == '1.24.x')
         run: staticcheck -checks "all,-SA1019,-ST1003" ./...
 
       - name: Test (race on Linux)
