@@ -1,16 +1,16 @@
 package client
 
 import (
+	"bytes"
 	"context"
 	"crypto/ecdsa"
 	"crypto/rsa"
 	"crypto/tls"
 	"crypto/x509"
-	"encoding/pem"
 	"encoding/json"
+	"encoding/pem"
 	"errors"
 	"fmt"
-	"bytes"
 	"io"
 	"net/http"
 	"net/url"
@@ -208,8 +208,12 @@ func decryptPrivateKey(encryptedPEM, passphrase string) (string, error) {
 	}
 
 	// Check for RFC 1423 encrypted PEM block (legacy format)
+	// Note: IsEncryptedPEMBlock and DecryptPEMBlock are deprecated but still needed
+	// for backward compatibility with legacy encrypted keys.
+	//nolint:staticcheck // RFC 1423 support required for backward compatibility
 	if x509.IsEncryptedPEMBlock(block) {
 		// Attempt to decrypt using RFC 1423
+		//nolint:staticcheck // RFC 1423 support required for backward compatibility
 		der, err := x509.DecryptPEMBlock(block, []byte(passphrase))
 		if err != nil {
 			return "", fmt.Errorf("decryption failed (encrypted keys require a passphrase): %w", err)
