@@ -212,10 +212,14 @@ Available flags on `icann get ...` commands:
 - `--username` / `--password` (for basic)
 - `--cert-pem` / `--key-pem` (for tlsa)
 - `--key-passphrase` (for encrypted private keys)
-- `--version` (default v2)
+- `--api-version` (default v2)
 - `--entity` (default ry)
 - `--profile` (default env ICANN_PROFILE or 'default')
 - `--credentials-file` (default env ICANN_SHARED_CREDENTIALS_FILE or `~/.icann/credentials`)
+
+Global flags:
+
+- `--version` Show version information
 
 Output is pretty-printed JSON of the `StateResponse`.
 

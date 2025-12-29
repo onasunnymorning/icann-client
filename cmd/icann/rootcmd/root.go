@@ -10,7 +10,11 @@ import (
 var (
 	profileFlag         string
 	credentialsFileFlag string
+	showVersion         bool
 )
+
+// Version is set at build time via ldflags
+var Version = "dev"
 
 // RootCmd is the base command.
 var RootCmd = &cobra.Command{
@@ -18,6 +22,13 @@ var RootCmd = &cobra.Command{
 	Short:        "ICANN client CLI",
 	SilenceUsage: true, // don't print usage on runtime errors (e.g., HTTP 404)
 	// We keep default error printing and also print in Execute; alternatively set SilenceErrors: true
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if showVersion {
+			fmt.Println(Version)
+			return nil
+		}
+		return cmd.Help()
+	},
 }
 
 // Execute runs the root command.
@@ -29,6 +40,7 @@ func Execute() {
 }
 
 func init() {
+	RootCmd.Flags().BoolVar(&showVersion, "version", false, "Show version information")
 	RootCmd.PersistentFlags().StringVarP(&profileFlag, "profile", "p", "", "credentials profile (default: env ICANN_PROFILE or 'default')")
 	RootCmd.PersistentFlags().StringVarP(&credentialsFileFlag, "credentials-file", "c", "", "path to credentials file (default: env ICANN_SHARED_CREDENTIALS_FILE or ~/.icann/credentials)")
 
@@ -41,6 +53,6 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&flagCertPEM, "cert-pem", "", "PEM-encoded client certificate for TLSA (string)")
 	RootCmd.PersistentFlags().StringVar(&flagKeyPEM, "key-pem", "", "PEM-encoded client key for TLSA (string)")
 	RootCmd.PersistentFlags().StringVar(&flagKeyPassphrase, "key-passphrase", "", "Passphrase for decrypting encrypted private key")
-	RootCmd.PersistentFlags().StringVar(&flagVersion, "version", "", "API version (default v2)")
+	RootCmd.PersistentFlags().StringVar(&flagVersion, "api-version", "", "API version (default v2)")
 	RootCmd.PersistentFlags().StringVar(&flagEntity, "entity", "", "Entity (default ry)")
 }

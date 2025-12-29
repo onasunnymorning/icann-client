@@ -22,6 +22,6 @@ func init() {
 	mosapiCmd.PersistentFlags().StringVar(&flagPass, "password", "", "Password for basic auth")
 	mosapiCmd.PersistentFlags().StringVar(&flagCertPEM, "cert-pem", "", "PEM-encoded client certificate for TLSA (string)")
 	mosapiCmd.PersistentFlags().StringVar(&flagKeyPEM, "key-pem", "", "PEM-encoded client key for TLSA (string)")
-	mosapiCmd.PersistentFlags().StringVar(&flagVersion, "version", "", "API version (default v2)")
+	mosapiCmd.PersistentFlags().StringVar(&flagVersion, "api-version", "", "API version (default v2)")
 	mosapiCmd.PersistentFlags().StringVar(&flagEntity, "entity", "", "Entity (default ry)")
 }

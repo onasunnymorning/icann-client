@@ -21,6 +21,6 @@ func init() {
 	rriCmd.PersistentFlags().StringVar(&flagPass, "password", "", "Password for basic auth")
 	rriCmd.PersistentFlags().StringVar(&flagCertPEM, "cert-pem", "", "PEM-encoded client certificate for TLSA (string)")
 	rriCmd.PersistentFlags().StringVar(&flagKeyPEM, "key-pem", "", "PEM-encoded client key for TLSA (string)")
-	rriCmd.PersistentFlags().StringVar(&flagVersion, "version", "", "API version (default v2)")
+	rriCmd.PersistentFlags().StringVar(&flagVersion, "api-version", "", "API version (default v2)")
 	rriCmd.PersistentFlags().StringVar(&flagEntity, "entity", "", "Entity (default ry)")
 }

@@ -16,6 +16,7 @@ builds:
       - -trimpath
     ldflags:
       - -s -w
+      - -X github.com/onasunnymorning/icann-client/cmd/icann/rootcmd.Version={{.Version}}
 
 archives:
   - id: icann-archives
