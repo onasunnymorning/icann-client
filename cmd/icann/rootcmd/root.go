@@ -40,6 +40,7 @@ func init() {
 	RootCmd.PersistentFlags().StringVar(&flagPass, "password", "", "Password for basic auth")
 	RootCmd.PersistentFlags().StringVar(&flagCertPEM, "cert-pem", "", "PEM-encoded client certificate for TLSA (string)")
 	RootCmd.PersistentFlags().StringVar(&flagKeyPEM, "key-pem", "", "PEM-encoded client key for TLSA (string)")
+	RootCmd.PersistentFlags().StringVar(&flagKeyPassphrase, "key-passphrase", "", "Passphrase for decrypting encrypted private key")
 	RootCmd.PersistentFlags().StringVar(&flagVersion, "version", "", "API version (default v2)")
 	RootCmd.PersistentFlags().StringVar(&flagEntity, "entity", "", "Entity (default ry)")
 }

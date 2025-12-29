@@ -6,7 +6,24 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
-- Optional: Homebrew tap for CLI distribution.
+## [v0.2.0] - 2025-01-16
+
+### Added
+- Support for encrypted private keys with passphrase:
+  - Added `KeyPassphrase` field to `Config` struct
+  - Added `--key-passphrase` CLI flag
+  - Added `key_passphrase` field to credentials file format
+  - Support for PKCS#8 encrypted keys (via `github.com/youmark/pkcs8`)
+  - Support for RFC 1423 encrypted keys (legacy format)
+- Sample credentials file (`credentials.example`) with examples for both basic and TLSA authentication
+- Improved error messages for METRICA endpoints when METRICA is not enabled (404 responses)
+
+### Changed
+- Updated dependencies: added `github.com/youmark/pkcs8` and `golang.org/x/crypto` for PKCS#8 encrypted key support
+
+### Fixed
+- Fixed PEM format handling in credentials file (multi-line format now properly processed)
+- Fixed encrypted private key decryption to support both PKCS#8 and RFC 1423 formats
 
 ## [v0.1.0] - 2025-10-26
 
@@ -47,5 +64,6 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Correct MOSAPI monitoring state path per spec.
 - Eliminate HTTP/2 "DATA on HEAD" log noise by switching RRI status probe to GET.
 
-[Unreleased]: https://github.com/onasunnymorning/icann-client/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/onasunnymorning/icann-client/compare/v0.2.0...HEAD
+[v0.2.0]: https://github.com/onasunnymorning/icann-client/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/onasunnymorning/icann-client/releases/tag/v0.1.0

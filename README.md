@@ -189,6 +189,8 @@ key_pem = -----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----\n
 environment = ote
 ; You can also paste multi-line PEM blocks directly under certificate_pem/key_pem
 ; without escaping newlines; the loader will preprocess them.
+; For encrypted private keys, add:
+; key_passphrase = your_passphrase_here
 ```
 
 Flags always override file/env values. For TLSA, prefer certificate_pem and key_pem.
@@ -209,6 +211,7 @@ Available flags on `icann get ...` commands:
 - `--auth` basic|tlsa
 - `--username` / `--password` (for basic)
 - `--cert-pem` / `--key-pem` (for tlsa)
+- `--key-passphrase` (for encrypted private keys)
 - `--version` (default v2)
 - `--entity` (default ry)
 - `--profile` (default env ICANN_PROFILE or 'default')

@@ -58,7 +58,7 @@ func (c *Client) GetMetricaLatest(ctx context.Context) (*MetricaDomainListLatest
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
+		return nil, fmt.Errorf("METRICA not available for TLD %s (404): METRICA may not be enabled for this TLD or no reports are available yet", cfg.TLD)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
@@ -85,7 +85,7 @@ func (c *Client) GetMetricaByDate(ctx context.Context, date string) (*MetricaDom
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
+		return nil, fmt.Errorf("METRICA report not found for TLD %s and date %s (404): METRICA may not be enabled for this TLD or no report exists for this date", cfg.TLD, date)
 	}
 	if resp.StatusCode != http.StatusOK {
 		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}

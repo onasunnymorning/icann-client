@@ -2,14 +2,22 @@ package client
 
 import (
 	"context"
+	"crypto/ecdsa"
+	"crypto/rsa"
 	"crypto/tls"
+	"crypto/x509"
+	"encoding/pem"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"bytes"
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
+
+	"github.com/youmark/pkcs8"
 )
 
 // Client is a minimal HTTP client wrapper for ICANN APIs (MOSAPI/RRI).
@@ -73,9 +81,19 @@ func NewClient(cfg Config) (*Client, error) {
 		}
 	case AUTH_TYPE_TLSA:
 		// Configure mutual TLS using provided PEM-encoded certificate and key
-		cert, err := tls.X509KeyPair([]byte(cfg.CertificatePEM), []byte(cfg.KeyPEM))
+		// Handle encrypted private keys by attempting to decrypt them
+		keyPEM := cfg.KeyPEM
+		if strings.Contains(keyPEM, "ENCRYPTED") {
+			// Try to decrypt the encrypted private key using the provided passphrase
+			decryptedKey, err := decryptPrivateKey(keyPEM, cfg.KeyPassphrase)
+			if err != nil {
+				return nil, fmt.Errorf("failed to decrypt private key (encrypted keys require a passphrase): %w", err)
+			}
+			keyPEM = decryptedKey
+		}
+		cert, err := tls.X509KeyPair([]byte(cfg.CertificatePEM), []byte(keyPEM))
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to parse TLS certificate/key pair: %w", err)
 		}
 		if baseTransport.TLSClientConfig == nil {
 			baseTransport.TLSClientConfig = &tls.Config{}
@@ -134,6 +152,88 @@ func (c *Client) WithBaseURL(raw string) error {
 
 // Config returns a copy of the validated configuration used to construct the client.
 func (c *Client) Config() Config { return c.cfg }
+
+// decryptPrivateKey attempts to decrypt an encrypted PEM-encoded private key.
+// Supports both RFC 1423 (legacy) and PKCS#8 encrypted keys.
+// If passphrase is empty, it will attempt to decrypt without a passphrase (which will fail for encrypted keys).
+// Returns the decrypted PEM-encoded key, or an error if decryption fails.
+func decryptPrivateKey(encryptedPEM, passphrase string) (string, error) {
+	block, _ := pem.Decode([]byte(encryptedPEM))
+	if block == nil {
+		return "", fmt.Errorf("failed to decode PEM block")
+	}
+
+	// Check for PKCS#8 encrypted private key (ENCRYPTED PRIVATE KEY)
+	if block.Type == "ENCRYPTED PRIVATE KEY" {
+		if passphrase == "" {
+			return "", fmt.Errorf("PKCS#8 encrypted private key requires a passphrase")
+		}
+
+		// Decrypt PKCS#8 encrypted key
+		key, err := pkcs8.ParsePKCS8PrivateKey(block.Bytes, []byte(passphrase))
+		if err != nil {
+			return "", fmt.Errorf("failed to decrypt PKCS#8 encrypted private key: %w", err)
+		}
+
+		// Determine the key type and marshal it appropriately
+		var keyBytes []byte
+		var keyType string
+
+		switch k := key.(type) {
+		case *rsa.PrivateKey:
+			keyBytes = x509.MarshalPKCS1PrivateKey(k)
+			keyType = "RSA PRIVATE KEY"
+		case *ecdsa.PrivateKey:
+			var err error
+			keyBytes, err = x509.MarshalECPrivateKey(k)
+			if err != nil {
+				return "", fmt.Errorf("failed to marshal ECDSA private key: %w", err)
+			}
+			keyType = "EC PRIVATE KEY"
+		default:
+			// For other key types, try to marshal as PKCS#8
+			keyBytes, err = x509.MarshalPKCS8PrivateKey(key)
+			if err != nil {
+				return "", fmt.Errorf("unsupported private key type or failed to marshal: %w", err)
+			}
+			keyType = "PRIVATE KEY"
+		}
+
+		// Re-encode as unencrypted PEM
+		block = &pem.Block{
+			Type:  keyType,
+			Bytes: keyBytes,
+		}
+		return string(pem.EncodeToMemory(block)), nil
+	}
+
+	// Check for RFC 1423 encrypted PEM block (legacy format)
+	if x509.IsEncryptedPEMBlock(block) {
+		// Attempt to decrypt using RFC 1423
+		der, err := x509.DecryptPEMBlock(block, []byte(passphrase))
+		if err != nil {
+			return "", fmt.Errorf("decryption failed (encrypted keys require a passphrase): %w", err)
+		}
+
+		// Determine the key type from the original block type
+		keyType := "PRIVATE KEY"
+		if strings.Contains(block.Type, "RSA") {
+			keyType = "RSA PRIVATE KEY"
+		} else if strings.Contains(block.Type, "EC") {
+			keyType = "EC PRIVATE KEY"
+		}
+
+		// Re-encode as unencrypted PEM
+		block = &pem.Block{
+			Type:  keyType,
+			Bytes: der,
+		}
+		return string(pem.EncodeToMemory(block)), nil
+	}
+
+	// Not encrypted, return as-is
+	return encryptedPEM, nil
+}
 
 // DoJSON issues an HTTP request with optional JSON body and decodes a JSON response into out.
 // If in is non-nil, it will be JSON-encoded and sent with Content-Type: application/json.

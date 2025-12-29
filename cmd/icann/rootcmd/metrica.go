@@ -117,6 +117,7 @@ func buildConfigFromInputs() (base.Config, error) {
 	case base.AUTH_TYPE_TLSA:
 		cfg.CertificatePEM = expandEscapes(firstNonEmpty(flagCertPEM, rec["certificate_pem"], rec["certificate"]))
 		cfg.KeyPEM = expandEscapes(firstNonEmpty(flagKeyPEM, rec["key_pem"], rec["key"]))
+		cfg.KeyPassphrase = firstNonEmpty(flagKeyPassphrase, rec["key_passphrase"])
 	}
 
 	if cfg.TLD == "" {

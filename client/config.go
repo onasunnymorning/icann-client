@@ -13,6 +13,9 @@ type Config struct {
 	// KeyPEM is the PEM-encoded private key used for TLS client authentication when AuthType is AUTH_TYPE_TLSA.
 	// It is required in that case.
 	KeyPEM string
+	// KeyPassphrase is the passphrase for decrypting an encrypted private key when KeyPEM is encrypted.
+	// It is optional and only needed if KeyPEM is an encrypted private key.
+	KeyPassphrase string
 	// Username is the username to use for authentication when AuthType is AUTH_TYPE_BASIC and is required in that case.
 	Username string
 	// Password is the password to use for authentication when AuthType is AUTH_TYPE_BASIC and is required in that case.

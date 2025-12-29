@@ -13,15 +13,16 @@ import (
 )
 
 var (
-	flagTLD     string
-	flagEnv     string
-	flagAuth    string
-	flagUser    string
-	flagPass    string
-	flagCertPEM string
-	flagKeyPEM  string
-	flagVersion string
-	flagEntity  string
+	flagTLD          string
+	flagEnv          string
+	flagAuth         string
+	flagUser         string
+	flagPass         string
+	flagCertPEM      string
+	flagKeyPEM       string
+	flagKeyPassphrase string
+	flagVersion      string
+	flagEntity       string
 )
 
 // stateCmd fetches MOSAPI monitoring state
@@ -59,6 +60,7 @@ var stateCmd = &cobra.Command{
 			// Prefer PEM values; support keys certificate_pem/key_pem; allow fallback to certificate/key if a caller still supplies them
 			cfg.CertificatePEM = expandEscapes(firstNonEmpty(flagCertPEM, rec["certificate_pem"], rec["certificate"]))
 			cfg.KeyPEM = expandEscapes(firstNonEmpty(flagKeyPEM, rec["key_pem"], rec["key"]))
+			cfg.KeyPassphrase = firstNonEmpty(flagKeyPassphrase, rec["key_passphrase"])
 		}
 
 		if cfg.TLD == "" {
