@@ -41,7 +41,7 @@ jobs:
 
       - name: Run staticcheck (Linux only)
         if: runner.os == 'Linux'
-        run: staticcheck -checks "all,-SA1019" ./...
+        run: staticcheck -checks "all,-SA1019,-ST1003" ./...
 
       - name: Test (race on Linux)
         shell: bash

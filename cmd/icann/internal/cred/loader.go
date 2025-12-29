@@ -1,3 +1,5 @@
+// Package cred provides credential loading functionality for the ICANN CLI.
+// It supports AWS-style credential files with profiles and handles multi-line PEM blocks.
 package cred
 
 import (

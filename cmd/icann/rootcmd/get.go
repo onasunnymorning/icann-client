@@ -1,3 +1,4 @@
+// Package rootcmd provides the root command structure and command grouping for the ICANN CLI.
 package rootcmd
 
 import "github.com/spf13/cobra"
