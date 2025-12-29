@@ -9,8 +9,6 @@ import (
 	base "github.com/onasunnymorning/icann-client/client"
 )
 
-// StateResponse represents the generic shape of the monitoring state endpoint.
-// If a formal schema is available, replace this with a concrete struct.
 // GetStateResponse requests the MOSAPI monitoring state and returns the parsed response.
 // It uses the shared base client wiring (auth, base URL, timeouts).
 func (c *Client) GetStateResponse(ctx context.Context) (*StateResponse, error) {
