@@ -48,6 +48,7 @@ brews:
       owner: onasunnymorning
       name: homebrew-tap
       branch: main
+      path: Formula
     commit_author:
       name: goreleaserbot
       email: goreleaser@github.com
