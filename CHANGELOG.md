@@ -6,6 +6,25 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [v0.3.0] - 2025-01-16
+
+### Added
+- `--version` flag to display CLI version information
+- Version injection via ldflags in GoReleaser builds
+
+### Changed
+- Renamed `--version` flag to `--api-version` for API version specification (breaking change for CLI usage)
+- Updated CI to test with Go 1.23.x and 1.24.x (removed 1.22.x to match module requirements)
+- Updated release workflow to use Go 1.24.x
+- Run staticcheck only on Go 1.24.x (module requires Go 1.24.0)
+
+### Fixed
+- Fixed test exit code preservation when filtering deprecated warnings
+- Fixed GetStateResponse comment format (ST1020)
+- Added missing package comments (ST1000)
+- Fixed Homebrew formula path in GoReleaser config
+- Fixed CI coverage file handling
+
 ## [v0.2.0] - 2025-01-16
 
 ### Added
@@ -64,6 +83,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Correct MOSAPI monitoring state path per spec.
 - Eliminate HTTP/2 "DATA on HEAD" log noise by switching RRI status probe to GET.
 
-[Unreleased]: https://github.com/onasunnymorning/icann-client/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/onasunnymorning/icann-client/compare/v0.3.0...HEAD
+[v0.3.0]: https://github.com/onasunnymorning/icann-client/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/onasunnymorning/icann-client/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/onasunnymorning/icann-client/releases/tag/v0.1.0
