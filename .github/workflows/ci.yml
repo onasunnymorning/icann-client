@@ -47,12 +47,14 @@ jobs:
         shell: bash
         run: |
           if [ "${{ runner.os }}" = "Linux" ]; then
-            go test ./... -race -coverprofile=coverage.out 2>&1 | grep -v "deprecated" || true
+            go test ./... -race -coverprofile=coverage.out 2>&1 | grep -v "deprecated" || TEST_EXIT=${PIPESTATUS[0]}
           else
-            go test ./... -coverprofile=coverage.out 2>&1 | grep -v "deprecated" || true
+            go test ./... -coverprofile=coverage.out 2>&1 | grep -v "deprecated" || TEST_EXIT=${PIPESTATUS[0]}
           fi
           # Ensure coverage.out exists even if tests don't generate it
           touch coverage.out || true
+          # Exit with test exit code if tests failed
+          exit ${TEST_EXIT:-0}
 
       - name: Upload coverage artifact
         if: always()
