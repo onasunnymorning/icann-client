@@ -51,7 +51,7 @@ brews:
       owner: onasunnymorning
       name: homebrew-tap
       branch: main
-    formula_path: Formula/icann.rb
+    directory: Formula
     commit_author:
       name: goreleaserbot
       email: goreleaser@github.com
