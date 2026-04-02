@@ -14,7 +14,7 @@ import (
 func ExampleClient_GetRyEscrowReportStatus() {
 	// Fake RRI escrow status endpoint
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/rri/escrow/ry/example/2025-10-22/status" {
+		if r.URL.Path == "/info/report/registry-escrow-report/example/2025-10-22" {
 			w.WriteHeader(http.StatusOK)
 			return
 		}
