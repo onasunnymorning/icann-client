@@ -265,10 +265,10 @@ func (c *Client) DoJSON(ctx context.Context, method, path string, in any, out an
 		return nil, err
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		// Drain and close body to allow connection reuse
-		io.Copy(io.Discard, resp.Body)
+		// Drain and close body to read error message and allow connection reuse
+		b, _ := io.ReadAll(resp.Body)
 		resp.Body.Close()
-		return resp, &HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
+		return resp, &HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String(), Body: string(b)}
 	}
 	if out != nil {
 		// Best-effort JSON decode; handle empty body

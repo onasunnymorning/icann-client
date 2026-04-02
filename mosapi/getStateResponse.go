@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
 	base "github.com/onasunnymorning/icann-client/client"
@@ -25,8 +26,9 @@ func (c *Client) GetStateResponse(ctx context.Context) (*StateResponse, error) {
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
 		// Include the URL to aid debugging; return a typed HTTPError for programmatic handling.
-		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String()}
+		return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String(), Body: string(b)}
 	}
 	var out StateResponse
 	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {

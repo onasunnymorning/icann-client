@@ -15,6 +15,8 @@ const (
 
 	MOSAPI_URL     = "https://mosapi.icann.org"
 	MOSAPI_OTE_URL = "https://mosapi-ote.icann.org"
+	RRI_URL        = "https://ry-api.icann.org"
+	RRI_OTE_URL    = "https://test-ry-api.icann.org"
 
 	ServiceEPP    = "EPP"
 	ServiceDNS    = "DNS"
