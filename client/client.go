@@ -243,6 +243,12 @@ func decryptPrivateKey(encryptedPEM, passphrase string) (string, error) {
 // If in is non-nil, it will be JSON-encoded and sent with Content-Type: application/json.
 // If out is non-nil and the response has a JSON Content-Type, it will be decoded.
 // Returns a *HTTPError for non-2xx responses.
+//
+// DoJSON is not used anywhere in this module and is retained only for API
+// compatibility. It is unsuitable for the RRI reporting interfaces: those
+// endpoints return a meaningful result envelope alongside a non-2xx status
+// (for example HTTP 400), which DoJSON discards in favour of an *HTTPError.
+// Use NewRequest and Do directly and inspect the status code yourself.
 func (c *Client) DoJSON(ctx context.Context, method, path string, in any, out any) (*http.Response, error) {
 	var body io.Reader
 	if in != nil {

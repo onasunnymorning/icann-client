@@ -13,16 +13,16 @@ import (
 )
 
 var (
-	flagTLD          string
-	flagEnv          string
-	flagAuth         string
-	flagUser         string
-	flagPass         string
-	flagCertPEM      string
-	flagKeyPEM       string
+	flagTLD           string
+	flagEnv           string
+	flagAuth          string
+	flagUser          string
+	flagPass          string
+	flagCertPEM       string
+	flagKeyPEM        string
 	flagKeyPassphrase string
-	flagVersion      string
-	flagEntity       string
+	flagVersion       string
+	flagEntity        string
 )
 
 // stateCmd fetches MOSAPI monitoring state

@@ -71,7 +71,7 @@ func (c *Client) GetRyEscrowReportStatus(ctx context.Context, date time.Time) (*
 	case http.StatusNotFound:
 		b, _ := io.ReadAll(resp.Body)
 		bodyStr := string(b)
-		// The API may return 404 for unauthorized or invalid paths with an HTML Apache error page, 
+		// The API may return 404 for unauthorized or invalid paths with an HTML Apache error page,
 		// or a JSON error message. A genuine "pending" state should ideally not be a server error page.
 		if strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") || strings.Contains(strings.ToLower(bodyStr), "<html") {
 			return nil, &base.HTTPError{StatusCode: resp.StatusCode, Method: req.Method, URL: req.URL.String(), Body: bodyStr}
