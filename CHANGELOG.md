@@ -28,6 +28,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   - A filename whose type disagrees with its CSV header is an error, not a guess
   - Same batch behaviour as `submit escrow report`: everything validated before the first request, then sequential over a single connection with `--delay` defaulting to `1s`
   - Shares the JSON envelope, with `type`/`month` in place of `id` and a `hint` field on actionable rejections
+- `icann config show` prints the configuration a command would run with — credentials file and profile in use, where each value came from, the resolved TLD/environment/auth type and the endpoint URLs. Secrets are never displayed: a password is reported as its length plus the first eight hex digits of its SHA-256, so it can be checked against `printf '%s' 'the-password' | shasum -a 256 | cut -c1-8` without appearing on screen. It also warns when a value looks mangled on the way in.
 
 ### Fixed
 - Credentials file values were silently truncated at an unquoted `#` or `;`, so a password such as `s3cr#t` was sent as `s3cr` and the API replied `401 Invalid User and/or Password`. Quoting did not help: the parser truncated inside quotes and kept the opening quote. Usernames, passwords, passphrases and PEM blocks are now read verbatim, while the documented trailing `; comment` style still works for `auth_type`, `tld`, `environment`, `version` and `entity`.
@@ -50,6 +51,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Updated release workflow to use Go 1.24.x
 - Run staticcheck only on Go 1.24.x (module requires Go 1.24.0)
 
+### Added
+- `icann config show` prints the configuration a command would run with — credentials file and profile in use, where each value came from, the resolved TLD/environment/auth type and the endpoint URLs. Secrets are never displayed: a password is reported as its length plus the first eight hex digits of its SHA-256, so it can be checked against `printf '%s' 'the-password' | shasum -a 256 | cut -c1-8` without appearing on screen. It also warns when a value looks mangled on the way in.
+
 ### Fixed
 - Fixed test exit code preservation when filtering deprecated warnings
 - Fixed GetStateResponse comment format (ST1020)
@@ -71,6 +75,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ### Changed
 - Updated dependencies: added `github.com/youmark/pkcs8` and `golang.org/x/crypto` for PKCS#8 encrypted key support
+
+### Added
+- `icann config show` prints the configuration a command would run with — credentials file and profile in use, where each value came from, the resolved TLD/environment/auth type and the endpoint URLs. Secrets are never displayed: a password is reported as its length plus the first eight hex digits of its SHA-256, so it can be checked against `printf '%s' 'the-password' | shasum -a 256 | cut -c1-8` without appearing on screen. It also warns when a value looks mangled on the way in.
 
 ### Fixed
 - Fixed PEM format handling in credentials file (multi-line format now properly processed)
@@ -110,6 +117,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - BREAKING: mosapi.Client.GetStateResponse now accepts a context.Context parameter.
 - BREAKING: Use int64 for Unix timestamp fields in MOSAPI types (LastUpdateApiDb, Incident StartTime/EndTime).
 - Flattened CLI; legacy `mosapi` and `rri` groups are deprecated/hidden.
+
+### Added
+- `icann config show` prints the configuration a command would run with — credentials file and profile in use, where each value came from, the resolved TLD/environment/auth type and the endpoint URLs. Secrets are never displayed: a password is reported as its length plus the first eight hex digits of its SHA-256, so it can be checked against `printf '%s' 'the-password' | shasum -a 256 | cut -c1-8` without appearing on screen. It also warns when a value looks mangled on the way in.
 
 ### Fixed
 - Correct MOSAPI monitoring state path per spec.
