@@ -29,6 +29,17 @@ jobs:
       - name: Go version
         run: go version
 
+      - name: Check formatting (Linux only, Go 1.24+)
+        if: runner.os == 'Linux' && (matrix.go == '1.24.x')
+        run: |
+          unformatted=$(gofmt -l .)
+          if [ -n "$unformatted" ]; then
+            echo "The following files are not gofmt-clean:"
+            echo "$unformatted"
+            echo "Run 'gofmt -w .' to fix."
+            exit 1
+          fi
+
       - name: Build
         run: go build ./...
 

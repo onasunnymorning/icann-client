@@ -21,7 +21,8 @@ var RootCmd = &cobra.Command{
 	Use:          "icann",
 	Short:        "ICANN client CLI",
 	SilenceUsage: true, // don't print usage on runtime errors (e.g., HTTP 404)
-	// We keep default error printing and also print in Execute; alternatively set SilenceErrors: true
+	// Errors are reported by Execute, which also controls the exit code.
+	SilenceErrors: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if showVersion {
 			fmt.Println(Version)
