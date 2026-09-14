@@ -17,6 +17,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   - Flags: `--id`, `--dry-run`, `--delay`, `--stop-on-error`, `--no-preflight`, `--skip-received`
   - Prints one JSON envelope for both single and batch runs, per-file progress on stderr, and exits non-zero if any report failed
 
+### Fixed
+- Credentials file values were silently truncated at an unquoted `#` or `;`, so a password such as `s3cr#t` was sent as `s3cr` and the API replied `401 Invalid User and/or Password`. Quoting did not help: the parser truncated inside quotes and kept the opening quote. Usernames, passwords, passphrases and PEM blocks are now read verbatim, while the documented trailing `; comment` style still works for `auth_type`, `tld`, `environment`, `version` and `entity`.
+
 ### Notes
 - New response types carry lowerCamelCase JSON tags. The older `rri.ReportStatus` remains untagged so that `icann get escrow status` output is unchanged; retagging it is deferred to a future breaking release.
 
