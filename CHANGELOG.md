@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
-## [Unreleased]
+## [v0.4.0] - 2026-09-14
 
 ### Added
 - RDE (registry escrow) report submission, per `draft-lozano-icann-registry-interfaces` Section 2.3:
