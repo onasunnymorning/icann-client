@@ -53,11 +53,14 @@ func TestSubmitRyEscrowReportRequestShape(t *testing.T) {
 
 	var (
 		gotMethod, gotPath, gotContentType string
+		gotUser, gotPass                   string
+		gotHasAuth                         bool
 		gotLength                          int64
 		gotBody                            []byte
 	)
 	cli := newTestRRI(t, func(w http.ResponseWriter, r *http.Request) {
 		gotMethod, gotPath = r.Method, r.URL.Path
+		gotUser, gotPass, gotHasAuth = r.BasicAuth()
 		gotContentType = r.Header.Get("Content-Type")
 		gotLength = r.ContentLength
 		gotBody, _ = readAll(r)
@@ -80,6 +83,14 @@ func TestSubmitRyEscrowReportRequestShape(t *testing.T) {
 	}
 	if gotContentType != "text/xml" {
 		t.Errorf("Content-Type = %q, want text/xml", gotContentType)
+	}
+	// Credentials must ride along on the PUT itself: there is no login step, so
+	// a missing header here would surface only as a 401 from ICANN.
+	if !gotHasAuth {
+		t.Error("no Authorization header on the PUT")
+	}
+	if gotUser != "user" || gotPass != "pass" {
+		t.Errorf("basic auth = %q/%q, want user/pass", gotUser, gotPass)
 	}
 	if gotLength != int64(len(fixture)) {
 		t.Errorf("ContentLength = %d, want %d", gotLength, len(fixture))
