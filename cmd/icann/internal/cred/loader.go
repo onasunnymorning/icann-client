@@ -47,7 +47,14 @@ func Load(profile, file string) (Record, error) {
 	}
 	processed := preprocessPEM(string(raw))
 
-	cfg, err := ini.Load([]byte(processed))
+	// IgnoreInlineComment keeps values literal. Without it the parser treats an
+	// unquoted "#" or ";" as the start of a comment and silently truncates the
+	// value there, which turns a password like "s3cr#t" into "s3cr" and shows up
+	// as an authentication failure against the API. Quoting does not help: the
+	// default parser truncates inside quotes too and leaves the opening quote in
+	// place. Inline comments are instead stripped below, for the few keys whose
+	// values cannot legitimately contain those characters.
+	cfg, err := ini.LoadSources(ini.LoadOptions{IgnoreInlineComment: true}, []byte(processed))
 	if err != nil {
 		return nil, err
 	}
@@ -58,10 +65,37 @@ func Load(profile, file string) (Record, error) {
 	kv := Record{}
 	for _, key := range sec.Keys() {
 		name := strings.ToLower(strings.TrimSpace(key.Name()))
-		val := strings.TrimSpace(key.Value())
+		val := key.Value()
+		if !literalKeys[name] {
+			val = strings.TrimSpace(stripInlineComment(val))
+		}
 		kv[name] = val
 	}
 	return kv, nil
+}
+
+// literalKeys are the fields whose values are taken exactly as written, because
+// they may legitimately contain "#", ";" or significant whitespace. Everything
+// else keeps the documented inline-comment style, e.g. "environment = prod ; prod | ote".
+//
+// A value in this set that must carry leading or trailing whitespace has to be
+// quoted in the credentials file; the parser strips the surrounding quotes.
+var literalKeys = map[string]bool{
+	"password":        true,
+	"key_passphrase":  true,
+	"username":        true,
+	"certificate_pem": true,
+	"key_pem":         true,
+	"certificate":     true,
+	"key":             true,
+}
+
+// stripInlineComment removes a trailing "#" or ";" comment from a value.
+func stripInlineComment(v string) string {
+	if i := strings.IndexAny(v, "#;"); i >= 0 {
+		return v[:i]
+	}
+	return v
 }
 
 // preprocessPEM collapses multi-line PEM values for keys certificate_pem and key_pem
