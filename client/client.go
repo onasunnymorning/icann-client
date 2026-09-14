@@ -13,6 +13,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"net/http/cookiejar"
 	"net/url"
 	"strings"
 	"time"
@@ -103,8 +104,18 @@ func NewClient(cfg Config) (*Client, error) {
 		rt = baseTransport
 	}
 
+	// A cookie jar is required by MOSAPI, which is session based: /login hands
+	// back a session cookie that every other endpoint expects. Without a jar the
+	// cookie is dropped and those endpoints answer 401. RRI sets no cookies, so
+	// the jar is inert there.
+	jar, err := cookiejar.New(nil)
+	if err != nil {
+		return nil, err
+	}
+
 	httpClient := &http.Client{
 		Transport: rt,
+		Jar:       jar,
 		Timeout:   30 * time.Second,
 	}
 
@@ -152,6 +163,12 @@ func (c *Client) WithBaseURL(raw string) error {
 
 // Config returns a copy of the validated configuration used to construct the client.
 func (c *Client) Config() Config { return c.cfg }
+
+// BaseURL returns a copy of the client's base URL.
+func (c *Client) BaseURL() *url.URL {
+	u := *c.baseURL
+	return &u
+}
 
 // decryptPrivateKey attempts to decrypt an encrypted PEM-encoded private key.
 // Supports both RFC 1423 (legacy) and PKCS#8 encrypted keys.

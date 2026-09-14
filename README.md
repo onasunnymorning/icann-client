@@ -172,6 +172,41 @@ MOSAPI endpoints are versioned and scoped by entity and TLD/registrar ID. This l
 - Base path format: `/<entity>/<tld-or-registrar-id>/<version>`
 - Example (registry entity, TLD "example", v2): `/ry/example/v2/monitoring/state`
 
+### MOSAPI sessions
+
+MOSAPI is session based, unlike RRI. Credentials are accepted only at the
+unversioned `/<entity>/<tld>/login` endpoint, which returns a session cookie
+scoped to `/<entity>/<tld>` and all sub-paths; the versioned endpoints
+authenticate with that cookie, or with a TLS client certificate. A request that
+arrives with neither is answered:
+
+```
+401 The client could not be authenticated using any of the available methods:
+TLS-Client-Authentication or Session Cookie.
+```
+
+The client handles this for you. A `mosapi.Client` using basic auth logs in
+before its first request, reuses the session for subsequent ones, and renews it
+once if the server reports it expired. Certificate authentication skips the
+login entirely, since the versioned endpoints accept a certificate directly.
+
+`Login` and `Logout` are exported for callers that want to manage the session
+themselves, and `HasSession` reports whether one is held:
+
+```go
+msc, _ := mosapi.New(cfg)
+if err := msc.Login(ctx); err != nil {
+	return err
+}
+defer msc.Logout(ctx)
+```
+
+Two ICANN-side limits are worth knowing. A session expires 15 minutes after it
+is created, and **only one concurrent session is permitted per account** — a new
+login terminates the account's oldest session. So a long-running process should
+hold one client and reuse it, and two tools running against the same account
+will evict each other.
+
 ### Domain METRICA (library)
 
 Use the MOSAPI client to retrieve METRICA (formerly DAAR) reports:

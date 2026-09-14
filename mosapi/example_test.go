@@ -14,6 +14,12 @@ import (
 func ExampleClient_GetStateResponse() {
 	// Fake MOSAPI server
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// MOSAPI is session based: credentials are accepted only at /login,
+		// which hands back the session cookie the endpoints require.
+		if r.URL.Path == "/ry/example/login" {
+			http.SetCookie(w, &http.Cookie{Name: "id", Value: "session", Path: "/ry/example"})
+			return
+		}
 		if r.URL.Path != "/ry/example/v2/monitoring/state" {
 			w.WriteHeader(http.StatusNotFound)
 			return
@@ -37,6 +43,12 @@ func ExampleClient_GetStateResponse() {
 func ExampleClient_GetMetricaLatest() {
 	// Fake METRICA latest endpoint
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// MOSAPI is session based: credentials are accepted only at /login,
+		// which hands back the session cookie the endpoints require.
+		if r.URL.Path == "/ry/example/login" {
+			http.SetCookie(w, &http.Cookie{Name: "id", Value: "session", Path: "/ry/example"})
+			return
+		}
 		if r.URL.Path != "/ry/example/v2/metrica/domainList/latest" {
 			w.WriteHeader(http.StatusNotFound)
 			return

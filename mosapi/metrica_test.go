@@ -4,25 +4,14 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
-
-	base "github.com/onasunnymorning/icann-client/client"
 )
 
+// newTestMOSAPI returns a client whose server also serves MOSAPI's /login
+// endpoint, since every endpoint call now establishes a session first.
 func newTestMOSAPI(t *testing.T, handler func(w http.ResponseWriter, r *http.Request)) *Client {
 	t.Helper()
-	srv := httptest.NewServer(http.HandlerFunc(handler))
-	t.Cleanup(srv.Close)
-
-	cfg := base.Config{TLD: "example", Environment: base.ENV_PROD, Version: base.V2, Entity: base.EntityRegistry, AuthType: base.AUTH_TYPE_BASIC, Username: "u", Password: "p"}
-	c, err := New(cfg)
-	if err != nil {
-		t.Fatalf("new client: %v", err)
-	}
-	if err := c.WithBaseURL(srv.URL); err != nil {
-		t.Fatalf("with base url: %v", err)
-	}
+	c, _ := newSessionClient(t, handler)
 	return c
 }
 
