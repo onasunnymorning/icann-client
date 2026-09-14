@@ -71,7 +71,7 @@ func TestExpandReportPaths(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := expandReportPaths(tt.args)
+			got, err := expandReportPaths(tt.args, ".xml")
 			if err != nil {
 				t.Fatalf("expandReportPaths() error = %v", err)
 			}
@@ -120,7 +120,7 @@ func TestExpandReportPathsErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := expandReportPaths(tt.args)
+			got, err := expandReportPaths(tt.args, ".xml")
 			if err == nil {
 				t.Fatalf("expandReportPaths() = %v, want an error", got)
 			}

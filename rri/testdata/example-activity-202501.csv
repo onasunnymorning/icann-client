@@ -1,0 +1,2 @@
+tld,operational-registrars,whois-43-queries,web-whois-queries,dns-udp-queries-received,dns-udp-queries-responded,srs-dom-check,srs-dom-create
+example,3,10000,250,5000000,4999000,1200,340
