@@ -141,6 +141,30 @@ if err != nil {
 Submitting a report whose id was already accepted overwrites the previous one,
 so the call is safe to repeat.
 
+The two Specification 3 monthly reports (Section 3 of the draft) work the same
+way, over `SubmitMonthlyReport`. Their filenames carry everything the URL needs:
+
+```go
+name := "example-transactions-202501.csv"
+report, _ := os.ReadFile(name)
+
+month, typ := rri.ParseMonthlyFilename(name)
+if month == "" || typ == "" { /* pass them explicitly instead */ }
+
+meta, _ := rri.ParseMonthlyReport(report)
+if err := meta.Validate(rri.MonthlyValidationOptions{TLD: cfg.TLD, Month: month, Type: typ}); err != nil {
+	// Catches, locally, what ICANN would reject: a bad encoding, a ragged
+	// CSV, negative values, and a totals line that does not add up.
+}
+
+res, err := rc.SubmitMonthlyReport(context.Background(), typ, month, report)
+```
+
+The same `ResultCodeOf`/`IsRetryable` branch applies, and `rri.ResultHint(code)`
+returns a one-line explanation for the codes a backfill actually hits — most
+usefully 2002, where the month's cut-off date has passed and no retry will help.
+`GetMonthlyReportStatus` reports whether ICANN already holds a given month.
+
 ### MOSAPI URL structure
 
 MOSAPI endpoints are versioned and scoped by entity and TLD/registrar ID. This library composes the path automatically from `Config.Entity`, `Config.TLD`, and `Config.Version`.
@@ -374,6 +398,76 @@ Output is pretty-printed JSON of the `StateResponse`.
 		Re-running is safe: a report whose id was already accepted simply
 		overwrites the previous submission.
 
+		- Submit Specification 3 monthly reports (transactions, activity)
+
+		```
+		./icann submit monthly ./monthly-reports/ --tld example \
+			--credentials-file ~/.icann/credentials
+		```
+
+		The two monthly CSV reports required by Specification 3 of the gTLD Base
+		Registry Agreement go to separate endpoints
+		(`/report/registrar-transactions/<tld>/<yyyy-mm>` and
+		`/report/registry-functions-activity/<tld>/<yyyy-mm>`), but one command
+		handles both. Each file's type is detected from its CSV header line and
+		its month is read from the filename. Both the Specification 3 convention
+		(`<tld>-transactions-<yyyymm>.csv`) and the looser shapes providers hand
+		over in practice (`registrar-transactions-2026-08.csv`) are understood:
+		the type is any `transactions` or `activity` token in the name, and the
+		month is the last `YYYYMM` or `YYYY-MM` in it. A
+		single run may therefore mix both report types across many months — which
+		is what a provider-migration backfill looks like.
+
+		If a filename says one report type and the CSV header says the other, the
+		run fails rather than guessing: that is the easiest way to file the wrong
+		report against the wrong endpoint.
+
+		Pre-flight runs before anything is sent and re-adds every numeric column
+		against the totals line, catching locally what would otherwise come back
+		as result code 2101:
+
+		```
+		example-transactions-202501.csv: column "net-adds-1-yr": totals line says 15,
+		but the 2 data lines sum to 17 (result code 2101)
+		```
+
+		It also checks UTF-8 encoding (2105), CSV structure (2001), negative
+		values (2003), the `Totals` line's empty second field (2103), the `tld`
+		column, and that the month has ended (2004). The CSV itself is sent
+		byte for byte as it sits on disk.
+
+		| Flag | Default | Purpose |
+		| --- | --- | --- |
+		| `--month` | from the filename | Month in `YYYY-MM` form; a single file only |
+		| `--type` | from the CSV header | Force `transactions` or `activity` |
+		| `--dry-run` | `false` | Validate and report what would be sent, without submitting |
+		| `--delay` | `1s` | Pause between submissions; `0` disables |
+		| `--stop-on-error` | `false` | Stop at the first failure instead of continuing |
+		| `--no-preflight` | `false` | Skip local parsing; requires `--month`, `--type` and a single file |
+		| `--skip-received` | `false` | Skip months already received (doubles the request count) |
+
+		Output uses the same envelope as `submit escrow report`, with `type` and
+		`month` in place of `id`, and a `hint` on rejections that have an
+		actionable cause:
+
+		```json
+		{
+			"file": "monthly-reports/example-transactions-202501.csv",
+			"status": "rejected",
+			"type": "transactions",
+			"month": "2025-01",
+			"httpStatus": 400,
+			"resultCode": 2002,
+			"message": "A report for that month already exists and the cut-off date has passed",
+			"hint": "the cut-off date for this month has passed, so ICANN will not accept a replacement; contact ICANN Global Support to have it reopened"
+		}
+		```
+
+		Before a month's cut-off date a report may be replaced as many times as
+		needed, so re-running a partial backfill is safe. After the cut-off ICANN
+		rejects the replacement with result code 2002, which no client can work
+		around.
+
 Notes:
 - Runtime errors (e.g., HTTP 4xx/5xx) do not print the CLI usage banner.
 - Errors include the HTTP method and full URL to aid debugging.
@@ -392,7 +486,7 @@ See `CHANGELOG.md` for detailed changes.
 ## Roadmap
 
 - High-level MOSAPI resource methods (e.g., health, reports, domain operations)
-- Further RRI interfaces (DNS/DNSSEC and other registry reports)
+- Further RRI interfaces (DNS/DNSSEC reports)
 - Retries and backoff (error types landed: `client.HTTPError`, `rri.ResultError`)
 - Context-aware helpers and request builders
 

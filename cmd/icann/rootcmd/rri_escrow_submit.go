@@ -41,6 +41,8 @@ const (
 type submissionResult struct {
 	File       string     `json:"file"`
 	Status     string     `json:"status"`
+	Type       string     `json:"type,omitempty"`
+	Month      string     `json:"month,omitempty"`
 	ID         string     `json:"id,omitempty"`
 	Kind       string     `json:"kind,omitempty"`
 	Watermark  *time.Time `json:"watermark,omitempty"`
@@ -49,6 +51,7 @@ type submissionResult struct {
 	ResultCode int        `json:"resultCode,omitempty"`
 	Message    string     `json:"message,omitempty"`
 	Retryable  bool       `json:"retryable,omitempty"`
+	Hint       string     `json:"hint,omitempty"`
 	Error      string     `json:"error,omitempty"`
 }
 
@@ -90,7 +93,7 @@ a partial backfill is safe.`,
 }
 
 func runSubmitEscrowReport(cmd *cobra.Command, args []string) error {
-	files, err := expandReportPaths(args)
+	files, err := expandReportPaths(args, ".xml")
 	if err != nil {
 		return err
 	}
@@ -247,24 +250,7 @@ func submitOne(cmd *cobra.Command, cli *rri.Client, p preparedReport) submission
 
 	out, err := cli.SubmitRyEscrowReport(cmd.Context(), p.id, p.body)
 	if err != nil {
-		res.Error = err.Error()
-		res.Retryable = rri.IsRetryable(err)
-
-		var re *rri.ResultError
-		if errors.As(err, &re) {
-			res.Status = statusRejected
-			res.ResultCode = re.Code
-			res.Message = re.Msg
-			res.HTTPStatus = re.HTTPStatus
-			res.URL = re.URL
-			return res
-		}
-		res.Status = statusError
-		var he *base.HTTPError
-		if errors.As(err, &he) {
-			res.HTTPStatus = he.StatusCode
-			res.URL = he.URL
-		}
+		classifySubmitError(&res, err)
 		return res
 	}
 
@@ -276,6 +262,33 @@ func submitOne(cmd *cobra.Command, cli *rri.Client, p preparedReport) submission
 	return res
 }
 
+// classifySubmitError records a failed submission on res. A rejection carrying
+// an ICANN result code is a "rejected" outcome and is reported with the code
+// and, where one exists, a hint on what to do about it; anything else is an
+// "error". The two error kinds are alternatives, so the order below matters.
+func classifySubmitError(res *submissionResult, err error) {
+	res.Error = err.Error()
+	res.Retryable = rri.IsRetryable(err)
+
+	var re *rri.ResultError
+	if errors.As(err, &re) {
+		res.Status = statusRejected
+		res.ResultCode = re.Code
+		res.Message = re.Msg
+		res.HTTPStatus = re.HTTPStatus
+		res.URL = re.URL
+		res.Hint = rri.ResultHint(re.Code)
+		return
+	}
+
+	res.Status = statusError
+	var he *base.HTTPError
+	if errors.As(err, &he) {
+		res.HTTPStatus = he.StatusCode
+		res.URL = he.URL
+	}
+}
+
 // progressLine renders the one-line human marker written to stderr, so that
 // stdout stays a single JSON document.
 func progressLine(r submissionResult) string {
@@ -284,18 +297,28 @@ func progressLine(r submissionResult) string {
 	if r.ID != "" {
 		fmt.Fprintf(&b, "  id=%s", r.ID)
 	}
+	if r.Type != "" {
+		fmt.Fprintf(&b, "  type=%s", r.Type)
+	}
+	if r.Month != "" {
+		fmt.Fprintf(&b, "  month=%s", r.Month)
+	}
 	if r.ResultCode != 0 {
 		fmt.Fprintf(&b, "  code=%d", r.ResultCode)
 	}
 	if r.Error != "" {
 		fmt.Fprintf(&b, "  %s", r.Error)
 	}
+	if r.Hint != "" {
+		fmt.Fprintf(&b, "\n          hint: %s", r.Hint)
+	}
 	return b.String()
 }
 
 // expandReportPaths resolves each argument to report files:
 //
-//   - a directory yields its *.xml entries, non-recursively, in lexical order
+//   - a directory yields its entries with extension ext, non-recursively, in
+//     lexical order
 //   - an existing file yields itself, whatever its extension
 //   - anything else containing a glob metacharacter is expanded, and must match
 //   - anything else is an error naming the missing path
@@ -303,7 +326,7 @@ func progressLine(r submissionResult) string {
 // Results are de-duplicated by cleaned path, preserving first-seen order. POSIX
 // shells already expand globs, but directory arguments, quoted patterns and
 // Windows cmd.exe all reach us unexpanded.
-func expandReportPaths(args []string) ([]string, error) {
+func expandReportPaths(args []string, ext string) ([]string, error) {
 	var out []string
 	seen := map[string]struct{}{}
 
@@ -326,13 +349,13 @@ func expandReportPaths(args []string) ([]string, error) {
 			}
 			var found []string
 			for _, e := range entries {
-				if e.IsDir() || !strings.EqualFold(filepath.Ext(e.Name()), ".xml") {
+				if e.IsDir() || !strings.EqualFold(filepath.Ext(e.Name()), ext) {
 					continue
 				}
 				found = append(found, filepath.Join(arg, e.Name()))
 			}
 			if len(found) == 0 {
-				return nil, fmt.Errorf("directory %s contains no .xml reports", arg)
+				return nil, fmt.Errorf("directory %s contains no %s reports", arg, ext)
 			}
 			sort.Strings(found)
 			for _, f := range found {

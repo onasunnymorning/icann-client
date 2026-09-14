@@ -69,3 +69,50 @@ func ExampleClient_SubmitRyEscrowReport() {
 	fmt.Println(res.ID, res.ResultCode)
 	// Output: example-20250101-full 1000
 }
+
+func ExampleClient_SubmitMonthlyReport() {
+	// Fake Specification 3 monthly reporting endpoint.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut || r.URL.Path != "/report/registrar-transactions/example/2025-01" {
+			http.NotFound(w, r)
+			return
+		}
+		w.Header().Set("Content-Type", "text/xml")
+		_, _ = w.Write([]byte(`<response xmlns="urn:ietf:params:xml:ns:iirdea-1.0">` +
+			`<result code="1000"><msg>accepted</msg></result></response>`))
+	}))
+	defer srv.Close()
+
+	cfg := base.Config{TLD: "example", AuthType: base.AUTH_TYPE_BASIC, Username: "u", Password: "p"}
+	rc, _ := rri.New(cfg)
+	_ = rc.WithBaseURL(srv.URL)
+
+	name := "example-transactions-202501.csv"
+	report, _ := os.ReadFile(filepath.Join("testdata", name))
+
+	// Specification 3 names the file after its TLD, type and month, so both the
+	// endpoint and the month in the URL can be derived from the filename.
+	month, typ := rri.ParseMonthlyFilename(name)
+
+	// Pre-flight locally first: a wrong totals line is otherwise invisible
+	// until ICANN rejects it, and every request is rate-limited.
+	meta, _ := rri.ParseMonthlyReport(report)
+	if err := meta.Validate(rri.MonthlyValidationOptions{TLD: "example", Month: month, Type: typ}); err != nil {
+		fmt.Println("would be rejected:", err)
+		return
+	}
+
+	// The CSV is sent verbatim; a rejection comes back as a *rri.ResultError,
+	// which can arrive with HTTP 200.
+	res, err := rc.SubmitMonthlyReport(context.Background(), typ, month, report)
+	if err != nil {
+		if code, ok := rri.ResultCodeOf(err); ok {
+			fmt.Println("rejected with result code", code, "-", rri.ResultHint(code))
+			return
+		}
+		fmt.Println("failed:", err)
+		return
+	}
+	fmt.Println(res.Type, res.Month, res.ResultCode)
+	// Output: transactions 2025-01 1000
+}

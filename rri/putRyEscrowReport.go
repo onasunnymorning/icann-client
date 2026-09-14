@@ -5,16 +5,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
-
-	base "github.com/onasunnymorning/icann-client/client"
 )
-
-// maxResponseBody caps how much of a response we read. Result envelopes are a
-// few hundred bytes; the cap only guards against a pathological error page.
-const maxResponseBody = 1 << 20
 
 // SubmitResult describes an accepted registry escrow report submission.
 type SubmitResult struct {
@@ -64,55 +57,16 @@ func (c *Client) SubmitRyEscrowReport(ctx context.Context, id string, body []byt
 	req.Header.Set("Content-Type", "text/xml") // required by Section 2.3
 	req.Header.Set("Accept", "text/xml")
 
-	resp, err := c.Do(req)
+	res, status, err := c.doReportPut(req)
 	if err != nil {
 		return nil, err
-	}
-	defer resp.Body.Close()
-
-	// Always read the body, whatever the status: it carries the result code,
-	// and draining it lets the connection be reused for the next report. ICANN
-	// rate-limits on authentication, so connection reuse is load-bearing.
-	raw, err := io.ReadAll(io.LimitReader(resp.Body, maxResponseBody))
-	if err != nil {
-		return nil, fmt.Errorf("reading response body: %w", err)
-	}
-
-	httpErr := func() error {
-		return &base.HTTPError{
-			StatusCode: resp.StatusCode,
-			Method:     req.Method,
-			URL:        req.URL.String(),
-			Body:       string(raw),
-		}
-	}
-
-	res, parseErr := parseIIRDEAResponse(raw)
-	if parseErr != nil {
-		// No result code to report on, so surface the raw HTTP failure. We
-		// never infer success from a 2xx with an unreadable body.
-		return nil, httpErr()
-	}
-	if res.Result.Code != ResultSuccess {
-		return nil, &ResultError{
-			Code:       res.Result.Code,
-			Msg:        res.Result.Msg,
-			HTTPStatus: resp.StatusCode,
-			Method:     req.Method,
-			URL:        req.URL.String(),
-		}
-	}
-	if resp.StatusCode != http.StatusOK {
-		// Result code 1000 on a non-200 status contradicts the specification;
-		// refuse to report it as an acceptance.
-		return nil, httpErr()
 	}
 
 	return &SubmitResult{
 		TLD:        cfg.TLD,
 		ID:         id,
 		URL:        req.URL.String(),
-		HTTPStatus: resp.StatusCode,
+		HTTPStatus: status,
 		ResultCode: res.Result.Code,
 		Message:    res.Result.Msg,
 	}, nil

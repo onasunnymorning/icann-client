@@ -9,12 +9,17 @@ import (
 	base "github.com/onasunnymorning/icann-client/client"
 )
 
-// Result codes returned by the ICANN registry escrow report interface, as
-// defined by draft-lozano-icann-registry-interfaces.
+// Result codes returned by the ICANN reporting interfaces, as defined by
+// draft-lozano-icann-registry-interfaces. The registry escrow report (Section
+// 2.3) and the two Specification 3 monthly reports (Section 3) share one
+// envelope and overlapping ranges: 20xx codes are common, 21xx codes are
+// specific to the monthly CSV reports.
 const (
 	ResultSuccess               = 1000 // no errors found; the report was accepted
 	ResultBadRequest            = 2001 // the request did not validate against the schema
-	ResultDateInFuture          = 2004 // crDate or watermark is in the future
+	ResultReportExistsCutOff    = 2002 // a report for that month exists and the cut-off date has passed
+	ResultNegativeValues        = 2003 // the report contains negative numeric values
+	ResultDateInFuture          = 2004 // crDate or watermark is in the future, or the month has not ended
 	ResultUnsupportedVersion    = 2005 // version is not supported
 	ResultIDMismatch            = 2006 // the id in the report and in the URL path differ
 	ResultInterfaceDisabled     = 2007 // the interface is disabled for this TLD
@@ -26,7 +31,40 @@ const (
 	ResultRCDNMismatch          = 2210 // a count element carries an unexpected rcdn attribute
 	ResultDuplicateCount        = 2211 // several count elements share uri, rcdn and registrarId
 	ResultInvalidLabel          = 2212 // an invalid label or domain name syntax was found
+
+	// Codes specific to the Specification 3 monthly CSV reports (Section 3).
+	ResultIncorrectTotals        = 2101 // the totals line does not match the sum of the data lines
+	ResultRegistrarNotAccredited = 2102 // a registrar in the report is not ICANN-accredited
+	ResultTotalsLineNotEmpty     = 2103 // the second field of the totals line is not empty
+	ResultNotUTF8                = 2105 // the report is not encoded in UTF-8 (US-ASCII is accepted)
+	ResultInvalidDateInURL       = 2111 // the date in the URL is not a valid YYYY-MM month
 )
+
+// ResultHint returns a short, actionable note for the result codes a backfill
+// is most likely to hit, or the empty string when there is nothing useful to
+// add beyond ICANN's own message.
+func ResultHint(code int) string {
+	switch code {
+	case ResultReportExistsCutOff:
+		return "the cut-off date for this month has passed, so ICANN will not accept a replacement; contact ICANN Global Support to have it reopened"
+	case ResultIncorrectTotals:
+		return "the totals line does not match the sum of the data lines; run with --dry-run to see which column is off"
+	case ResultTotalsLineNotEmpty:
+		return "the second field of the totals line must be empty"
+	case ResultNotUTF8:
+		return "re-encode the file as UTF-8 before resubmitting"
+	case ResultInvalidDateInURL:
+		return "the month must be YYYY-MM; pass --month to override what was read from the filename"
+	case ResultInterfaceDisabled:
+		return "the interface is disabled for this TLD; this is the one rejection worth retrying later"
+	case ResultDateInFuture:
+		return "ICANN accepts a month only once it has ended"
+	case ResultRegistrarNotAccredited:
+		return "one of the registrars in the report is not ICANN-accredited for this TLD"
+	default:
+		return ""
+	}
+}
 
 // iirdeaResponse is the result envelope ICANN returns from the reporting
 // interfaces. It is sent with both HTTP 200 and HTTP 400 responses.

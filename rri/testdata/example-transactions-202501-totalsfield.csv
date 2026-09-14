@@ -1,0 +1,5 @@
+tld,registrar-name,iana-id,total-domains,net-adds-1-yr,net-renews-1-yr,attempted-adds
+example,Registrar Alpha,1001,120,10,5,12
+example,Registrar Beta,1002,80,7,3,9
+example,"Gamma, Ltd.",1003,50,4,2,5
+Totals,All Registrars,,250,21,10,26

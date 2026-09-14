@@ -17,8 +17,23 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
   - Flags: `--id`, `--dry-run`, `--delay`, `--stop-on-error`, `--no-preflight`, `--skip-received`
   - Prints one JSON envelope for both single and batch runs, per-file progress on stderr, and exits non-zero if any report failed
 
+- Specification 3 monthly report submission, per `draft-lozano-icann-registry-interfaces` Section 3:
+  - `rri.Client.SubmitMonthlyReport` — `PUT /report/registrar-transactions/<tld>/<yyyy-mm>` and `PUT /report/registry-functions-activity/<tld>/<yyyy-mm>`, sending the CSV verbatim with `Content-Type: text/csv`
+  - `rri.Client.GetMonthlyReportStatus` — the matching `HEAD /info/report/...` status check
+  - `rri.ParseMonthlyReport`, `rri.DetectReportType`, `rri.ParseMonthlyFilename` and `rri.MonthlyMeta.Validate` — local pre-flight that re-adds every numeric column against the totals line, and checks encoding, CSV structure, negative values and the month
+  - Result-code constants for the monthly interfaces (2002, 2003, 2101, 2102, 2103, 2105, 2111) and `rri.ResultHint`, which explains the codes a backfill hits — notably 2002, where the month's cut-off date has passed
+- `icann submit monthly <file|dir|glob>...`
+  - Detects each file's report type from its CSV header and its month from the filename, so one run can mix both report types across many months; `--type` and `--month` override
+  - Filename parsing accepts both the Specification 3 convention (`<tld>-transactions-<yyyymm>.csv`) and the looser shapes providers hand over (`registrar-transactions-2026-08.csv`): any `transactions`/`activity` token plus the last `YYYYMM` or `YYYY-MM` in the name
+  - A filename whose type disagrees with its CSV header is an error, not a guess
+  - Same batch behaviour as `submit escrow report`: everything validated before the first request, then sequential over a single connection with `--delay` defaulting to `1s`
+  - Shares the JSON envelope, with `type`/`month` in place of `id` and a `hint` field on actionable rejections
+
 ### Fixed
 - Credentials file values were silently truncated at an unquoted `#` or `;`, so a password such as `s3cr#t` was sent as `s3cr` and the API replied `401 Invalid User and/or Password`. Quoting did not help: the parser truncated inside quotes and kept the opening quote. Usernames, passwords, passphrases and PEM blocks are now read verbatim, while the documented trailing `; comment` style still works for `auth_type`, `tld`, `environment`, `version` and `entity`.
+
+### Changed
+- The shared response handling for report submissions (read body, parse the result envelope, classify as acceptance, `*rri.ResultError` or `*client.HTTPError`) moved into one internal helper used by both the escrow and monthly endpoints, so the classification order cannot drift between them. No behaviour change; the existing endpoint tests pass unmodified.
 
 ### Notes
 - New response types carry lowerCamelCase JSON tags. The older `rri.ReportStatus` remains untagged so that `icann get escrow status` output is unchanged; retagging it is deferred to a future breaking release.
