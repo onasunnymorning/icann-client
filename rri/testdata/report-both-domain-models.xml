@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdeReport:report
+  xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0"
+  xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
+  <rdeReport:id>example-20250101-full</rdeReport:id>
+  <rdeReport:version>1</rdeReport:version>
+  <rdeReport:rydeSpecEscrow>RFC8909</rdeReport:rydeSpecEscrow>
+  <rdeReport:crDate>2025-01-02T09:00:00Z</rdeReport:crDate>
+  <rdeReport:kind>FULL</rdeReport:kind>
+  <rdeReport:watermark>2025-01-01T00:00:00Z</rdeReport:watermark>
+  <rdeHeader:header>
+    <rdeHeader:tld>example</rdeHeader:tld>
+    <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">1250</rdeHeader:count>
+    <rdeHeader:count uri="urn:ietf:params:xml:ns:csvDomain-1.0">310</rdeHeader:count>
+  </rdeHeader:header>
+</rdeReport:report>

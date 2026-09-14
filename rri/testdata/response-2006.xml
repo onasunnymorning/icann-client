@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<iirdea:response xmlns:iirdea="urn:ietf:params:xml:ns:iirdea-1.0">
+  <iirdea:result code="2006">
+    <iirdea:msg>The &lt;id&gt; in the &lt;report&gt; element and the &lt;id&gt; in the URL path do not match.</iirdea:msg>
+  </iirdea:result>
+</iirdea:response>

@@ -86,7 +86,7 @@ Notes:
 
 ### RRI
 
-An `rri` subpackage is scaffolded and will follow the same pattern; both `mosapi` and `rri` will share the same base client and auth configuration so you can reuse credentials easily.
+The `rri` subpackage follows the same pattern as `mosapi`; both share the same base client and auth configuration so you can reuse credentials easily.
 
 ### RRI (library)
 
@@ -104,6 +104,42 @@ st, err := rc.GetRyEscrowReportStatus(context.Background(), time.Date(2025,10,22
 if err != nil { /* handle */ }
 fmt.Println(st.Status) // "received" or "pending"
 ```
+
+Submit an RDE (registry escrow) report. The report id is taken from the document
+itself, and the bytes are transmitted verbatim so any hash or signature over the
+report stays valid:
+
+```go
+report, _ := os.ReadFile("example-20250101-full.xml")
+
+meta, err := rri.ParseRyEscrowReport(report)
+if err != nil { /* not a usable report */ }
+if err := meta.Validate(rri.ValidationOptions{TLD: cfg.TLD}); err != nil {
+	// Catches, locally, what ICANN would reject: wrong TLD, future dates,
+	// duplicate counts.
+}
+
+res, err := rc.SubmitRyEscrowReport(context.Background(), meta.ID, report)
+```
+
+**HTTP 200 does not mean the report was accepted.** ICANN answers both 200 and
+400 with a result envelope, and only result code 1000 is an acceptance. A nil
+error from `SubmitRyEscrowReport` means code 1000; a rejection comes back as a
+`*rri.ResultError`:
+
+```go
+if err != nil {
+	if code, ok := rri.ResultCodeOf(err); ok {
+		// Rejected by ICANN, e.g. 2006 (id mismatch) or 2007 (interface disabled).
+		fmt.Println("rejected with code", code, "retryable:", rri.IsRetryable(err))
+	} else {
+		// Transport or HTTP failure; a *client.HTTPError carries the status.
+	}
+}
+```
+
+Submitting a report whose id was already accepted overwrites the previous one,
+so the call is safe to repeat.
 
 ### MOSAPI URL structure
 
@@ -270,6 +306,74 @@ Output is pretty-printed JSON of the `StateResponse`.
 		}
 		```
 
+		- Submit RDE (registry escrow) reports
+
+		```
+		./icann submit escrow report ./reports/ --tld example \
+			--credentials-file ~/.icann/credentials
+		```
+
+		Each argument may be a report file, a directory (its `*.xml` entries are
+		submitted in lexical order, which for date-stamped names is chronological),
+		or a glob. The report id comes from the `<rdeReport:id>` element of each
+		file. Every report is parsed and validated before anything is sent, so a
+		bad file fails the run rather than the ninth upload.
+
+		Reports are submitted sequentially over a single connection. ICANN
+		rate-limits on authentication, so the batch is deliberately not
+		parallelised and `--delay` defaults to `1s`.
+
+		| Flag | Default | Purpose |
+		| --- | --- | --- |
+		| `--id` | from the file | Report id to submit under; a single file only |
+		| `--dry-run` | `false` | Validate and report what would be sent, without submitting |
+		| `--delay` | `1s` | Pause between submissions; `0` disables |
+		| `--stop-on-error` | `false` | Stop at the first failure instead of continuing |
+		| `--no-preflight` | `false` | Skip local parsing; requires `--id` and a single file |
+		| `--skip-received` | `false` | Skip reports already received (doubles the request count) |
+
+		Output is a single JSON envelope, the same shape for one report or twelve:
+
+		```json
+		{
+			"tld": "example",
+			"dryRun": false,
+			"total": 2,
+			"succeeded": 1,
+			"failed": 1,
+			"skipped": 0,
+			"results": [
+				{
+					"file": "reports/example-20250101-full.xml",
+					"status": "accepted",
+					"id": "example-20250101-full",
+					"kind": "FULL",
+					"watermark": "2025-01-01T00:00:00Z",
+					"url": "https://ry-api.icann.org/report/registry-escrow-report/example/example-20250101-full",
+					"httpStatus": 200,
+					"resultCode": 1000,
+					"message": "No ERRORs were found, and the report has been accepted by ICANN."
+				},
+				{
+					"file": "reports/example-20250102-diff.xml",
+					"status": "rejected",
+					"id": "example-20250102-diff",
+					"kind": "DIFF",
+					"httpStatus": 400,
+					"resultCode": 2205,
+					"message": "Report regarding a differential deposit received when a full deposit was expected"
+				}
+			]
+		}
+		```
+
+		A per-file progress line goes to stderr so stdout stays a single JSON
+		document. `status` is one of `accepted`, `rejected`, `error`, `skipped`
+		or `validated`; the command exits non-zero if any report failed.
+
+		Re-running is safe: a report whose id was already accepted simply
+		overwrites the previous submission.
+
 Notes:
 - Runtime errors (e.g., HTTP 4xx/5xx) do not print the CLI usage banner.
 - Errors include the HTTP method and full URL to aid debugging.
@@ -288,7 +392,7 @@ See `CHANGELOG.md` for detailed changes.
 ## Roadmap
 
 - High-level MOSAPI resource methods (e.g., health, reports, domain operations)
-- RRI client
-- Retries, backoff, and error types
+- Further RRI interfaces (DNS/DNSSEC and other registry reports)
+- Retries and backoff (error types landed: `client.HTTPError`, `rri.ResultError`)
 - Context-aware helpers and request builders
 

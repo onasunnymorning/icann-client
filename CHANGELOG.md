@@ -6,6 +6,20 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+- RDE (registry escrow) report submission, per `draft-lozano-icann-registry-interfaces` Section 2.3:
+  - `rri.Client.SubmitRyEscrowReport` — `PUT /report/registry-escrow-report/<tld>/<id>`, sending the report body verbatim
+  - `rri.ParseRyEscrowReport` and `rri.ReportMeta.Validate` — local pre-flight checks (TLD, id, future dates, duplicate counts) that pre-empt ICANN rejections before a request is spent
+  - `rri.ResultError` plus result-code constants and the `ResultCodeOf`, `IsRejected` and `IsRetryable` helpers. ICANN returns a result envelope with both HTTP 200 and 400, and only code 1000 is an acceptance, so a 2xx status alone is never treated as success
+- New top-level `icann submit` command group, with `icann submit escrow report <file|dir|glob>...`
+  - Accepts files, directories and globs; validates every report before submitting any
+  - Submits sequentially over a single connection, since ICANN rate-limits on authentication. `--delay` defaults to `1s`
+  - Flags: `--id`, `--dry-run`, `--delay`, `--stop-on-error`, `--no-preflight`, `--skip-received`
+  - Prints one JSON envelope for both single and batch runs, per-file progress on stderr, and exits non-zero if any report failed
+
+### Notes
+- New response types carry lowerCamelCase JSON tags. The older `rri.ReportStatus` remains untagged so that `icann get escrow status` output is unchanged; retagging it is deferred to a future breaking release.
+
 ## [v0.3.0] - 2025-01-16
 
 ### Added
