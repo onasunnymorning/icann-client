@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [Unreleased]
+
+### Fixed
+- Every MOSAPI command (`icann get tld status`, `icann get metrica latest|date|lists`) failed with `401 ... TLS-Client-Authentication or Session Cookie` when using basic authentication. MOSAPI is session based: credentials are accepted only at the unversioned `/<entity>/<tld>/login` endpoint, and the versioned endpoints authenticate with the session cookie it returns. The client went straight to the versioned endpoint with an `Authorization` header, which MOSAPI does not accept there, and had no cookie jar to hold a session even if one had been issued. RRI is unaffected — it authenticates per request and has no login step.
+
+### Added
+- `mosapi.Client` now manages the MOSAPI session: it logs in before the first request, reuses the session across calls, and renews it once if the server reports it expired. Certificate authentication skips the login, since the versioned endpoints accept a TLS client certificate directly.
+- `mosapi.Client.Login`, `mosapi.Client.Logout` and `mosapi.Client.HasSession` for callers that want to manage the session explicitly. ICANN permits only one concurrent session per account and expires it after 15 minutes, so a client should be created once and reused.
+- `client.Client` now carries a cookie jar, and `client.Client.BaseURL` returns a copy of the configured base URL.
+
 ## [v0.4.0] - 2026-09-14
 
 ### Added
@@ -125,7 +135,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 - Correct MOSAPI monitoring state path per spec.
 - Eliminate HTTP/2 "DATA on HEAD" log noise by switching RRI status probe to GET.
 
-[Unreleased]: https://github.com/onasunnymorning/icann-client/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/onasunnymorning/icann-client/compare/v0.4.0...HEAD
 [v0.3.0]: https://github.com/onasunnymorning/icann-client/compare/v0.2.0...v0.3.0
 [v0.2.0]: https://github.com/onasunnymorning/icann-client/compare/v0.1.0...v0.2.0
 [v0.1.0]: https://github.com/onasunnymorning/icann-client/releases/tag/v0.1.0

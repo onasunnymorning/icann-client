@@ -13,9 +13,18 @@ import (
 func TestGetStateResponse(t *testing.T) {
 	// Mock MOSAPI endpoint
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// MOSAPI is session based: the client logs in before the first endpoint
+		// call and presents the resulting cookie thereafter.
+		if r.URL.Path == "/"+base.EntityRegistry+"/example/login" {
+			http.SetCookie(w, &http.Cookie{Name: "id", Value: "session", Path: "/ry/example"})
+			_, _ = w.Write([]byte("Login successful"))
+			return
+		}
 		expectedPath := "/" + base.EntityRegistry + "/example/" + base.V2 + "/monitoring/state"
 		if r.URL.Path != expectedPath {
-			t.Fatalf("unexpected path: %s (want %s)", r.URL.Path, expectedPath)
+			t.Errorf("unexpected path: %s (want %s)", r.URL.Path, expectedPath)
+			w.WriteHeader(http.StatusNotFound)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		resp := StateResponse{

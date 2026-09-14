@@ -10,6 +10,7 @@ import (
 	"math/big"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"testing"
 	"time"
 )
@@ -107,3 +108,44 @@ func TestNewClient_TLSACertLoaded(t *testing.T) {
 
 // bigIntOne returns big.Int(1) to avoid importing math/big in multiple places.
 func bigIntOne() *big.Int { return big.NewInt(1) }
+
+// TestNewClientHasCookieJar guards a requirement of MOSAPI, which is session
+// based: /login returns a session cookie that every other endpoint expects. A
+// client without a jar silently drops it, and those endpoints answer 401 no
+// matter how correct the credentials are.
+func TestNewClientHasCookieJar(t *testing.T) {
+	c, err := NewClient(Config{TLD: "example", AuthType: AUTH_TYPE_BASIC, Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("NewClient() error = %v", err)
+	}
+	if c.HTTPClient.Jar == nil {
+		t.Fatal("HTTPClient.Jar is nil; MOSAPI session cookies would be dropped")
+	}
+
+	u, err := url.Parse("https://mosapi.icann.org/ry/example/")
+	if err != nil {
+		t.Fatalf("url.Parse() error = %v", err)
+	}
+	c.HTTPClient.Jar.SetCookies(u, []*http.Cookie{{Name: "id", Value: "abc", Path: "/ry/example"}})
+	got := c.HTTPClient.Jar.Cookies(u)
+	if len(got) != 1 || got[0].Name != "id" || got[0].Value != "abc" {
+		t.Errorf("cookies = %v, want the session cookie to round-trip", got)
+	}
+}
+
+// TestBaseURLIsACopy keeps callers from mutating the client's base URL through
+// the accessor.
+func TestBaseURLIsACopy(t *testing.T) {
+	c, err := NewClient(Config{TLD: "example", AuthType: AUTH_TYPE_BASIC, Username: "u", Password: "p"})
+	if err != nil {
+		t.Fatalf("NewClient() error = %v", err)
+	}
+	got := c.BaseURL()
+	if got.String() != MOSAPI_URL {
+		t.Errorf("BaseURL() = %q, want %q", got, MOSAPI_URL)
+	}
+	got.Path = "/mutated"
+	if c.BaseURL().Path != "" {
+		t.Errorf("BaseURL() returned a reference; the client's URL was mutated to %q", c.BaseURL().Path)
+	}
+}

@@ -53,7 +53,7 @@ func (c *Client) GetMetricaLatest(ctx context.Context) (*MetricaDomainListLatest
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.Do(req)
+	resp, err := c.do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (c *Client) GetMetricaByDate(ctx context.Context, date string) (*MetricaDom
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.Do(req)
+	resp, err := c.do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -120,7 +120,7 @@ func (c *Client) ListMetricaReports(ctx context.Context, startDate, endDate stri
 	if err != nil {
 		return nil, err
 	}
-	resp, err := c.Do(req)
+	resp, err := c.do(req)
 	if err != nil {
 		return nil, err
 	}
