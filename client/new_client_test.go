@@ -84,7 +84,7 @@ func TestNewClient_TLSACertLoaded(t *testing.T) {
 
 	cfg := Config{
 		TLD:            "example",
-		AuthType:       AUTH_TYPE_TLSA,
+		AuthType:       AUTH_TYPE_CERT,
 		CertificatePEM: string(certPEM),
 		KeyPEM:         string(keyPEM),
 		Version:        V2,

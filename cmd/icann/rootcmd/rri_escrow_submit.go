@@ -72,10 +72,9 @@ var newRRIClient = rri.New
 
 var submitEscrowCmd = &cobra.Command{
 	Use:   "escrow",
-	Short: "Registry escrow operations",
-	// A group, not a command: reject an unknown subcommand instead of
-	// silently printing help and exiting 0.
-	Args: cobra.NoArgs,
+	Short: "Submit registry escrow reports to ICANN",
+	Args:  cobra.NoArgs,
+	RunE:  requireSubcommand,
 }
 
 var submitEscrowReportCmd = &cobra.Command{
@@ -91,6 +90,9 @@ the batch deliberately does not parallelise.
 The report id is read from the <rdeReport:id> element of each file. Submitting a
 report whose id was already accepted overwrites the previous one, so re-running
 a partial backfill is safe.`,
+	Example: "  icann submit escrow report deposit.xml --tld example\n" +
+		"  icann submit escrow report ./deposits/ --tld example --delay 2s\n" +
+		"  icann submit escrow report deposit.xml --tld example --dry-run",
 	Args: cobra.MinimumNArgs(1),
 	RunE: runSubmitEscrowReport,
 }

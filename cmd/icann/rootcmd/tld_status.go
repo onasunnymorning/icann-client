@@ -7,7 +7,11 @@ import (
 
 var tldStatusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Get TLD monitoring status",
+	Short: "Get TLD SLA monitoring status",
+	Long: "Show ICANN's SLA monitoring state for the TLD: whether DNS, RDDS/RDAP and,\n" +
+		"where applicable, EPP are currently up, and any incidents counting toward\n" +
+		"the emergency-threshold downtime budget for each.",
+	Example: "  icann get tld status --tld example",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := buildConfigFromInputs()
 		if err != nil {

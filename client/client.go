@@ -36,7 +36,7 @@ type Client struct {
 
 // NewClient constructs a new Client from the provided Config.
 // It applies sensible defaults, validates the configuration, and configures
-// authentication via either HTTP Basic or TLS client certificate ("TLSA").
+// authentication via either HTTP Basic or a TLS client certificate ("cert").
 func NewClient(cfg Config) (*Client, error) {
 	// Apply defaults if not set
 	if cfg.Version == "" {
@@ -80,7 +80,7 @@ func NewClient(cfg Config) (*Client, error) {
 			password: cfg.Password,
 			base:     baseTransport,
 		}
-	case AUTH_TYPE_TLSA:
+	case AUTH_TYPE_CERT:
 		// Configure mutual TLS using provided PEM-encoded certificate and key
 		// Handle encrypted private keys by attempting to decrypt them
 		keyPEM := cfg.KeyPEM

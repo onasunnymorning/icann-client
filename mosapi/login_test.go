@@ -303,7 +303,7 @@ func TestTLSAAuthSkipsLogin(t *testing.T) {
 
 	c, err := New(base.Config{
 		TLD: "example", Environment: base.ENV_PROD, Version: base.V2,
-		Entity: base.EntityRegistry, AuthType: base.AUTH_TYPE_TLSA,
+		Entity: base.EntityRegistry, AuthType: base.AUTH_TYPE_CERT,
 		CertificatePEM: certPEM, KeyPEM: keyPEM,
 	})
 	if err != nil {

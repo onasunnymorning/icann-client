@@ -40,27 +40,52 @@ const (
 	ResultInvalidDateInURL       = 2111 // the date in the URL is not a valid YYYY-MM month
 )
 
-// ResultHint returns a short, actionable note for the result codes a backfill
-// is most likely to hit, or the empty string when there is nothing useful to
-// add beyond ICANN's own message.
+// ResultHint returns a short, actionable note for the result code, or the
+// empty string for ResultSuccess, where there is nothing to add.
 func ResultHint(code int) string {
 	switch code {
+	case ResultSuccess:
+		return ""
+	case ResultBadRequest:
+		return "the document did not validate against ICANN's schema; check it against the Specification 2/3 template and re-submit"
 	case ResultReportExistsCutOff:
 		return "the cut-off date for this month has passed, so ICANN will not accept a replacement; contact ICANN Global Support to have it reopened"
+	case ResultNegativeValues:
+		return "the report contains a negative numeric value; ICANN never accepts negative counts"
+	case ResultDateInFuture:
+		return "ICANN accepts a month only once it has ended, and a deposit's watermark can't be in the future; check the file's date and this machine's clock"
+	case ResultUnsupportedVersion:
+		return "the report's version isn't one ICANN currently accepts; check --api-version and the version element in the file"
+	case ResultIDMismatch:
+		return "the report's own id doesn't match the id it was submitted under; drop --id and let it be read from the file, or correct one of the two"
+	case ResultInterfaceDisabled:
+		return "the interface is disabled for this TLD; this is the one rejection worth retrying later"
+	case ResultDateBeforeTLDCreation:
+		return "the report's date is before this TLD existed; check the file's crDate/watermark and the --tld you passed"
+	case ResultTLDMismatch:
+		return "the tld inside the report's header doesn't match --tld; make sure this is the right file for this TLD"
+	case ResultUnexpectedDIFF:
+		return "ICANN expected a FULL deposit first; submit the FULL deposit for this cycle before any DIFF"
+	case ResultDuplicateDomainCount:
+		return "report domain counts under only one object model (csvDomain or rdeDomain), not both"
+	case ResultMissingTLD:
+		return "the report's header is missing its tld element; check how the file was generated"
+	case ResultRCDNMismatch:
+		return "a <count> element's rcdn attribute doesn't match what ICANN expects for that uri; check the report generator"
+	case ResultDuplicateCount:
+		return "remove the duplicate <count> element; only one is allowed per uri/rcdn/registrarId combination"
+	case ResultInvalidLabel:
+		return "a domain or label in the report fails basic name syntax; check the entries ICANN's own message points to"
 	case ResultIncorrectTotals:
 		return "the totals line does not match the sum of the data lines; run with --dry-run to see which column is off"
+	case ResultRegistrarNotAccredited:
+		return "one of the registrars in the report is not ICANN-accredited for this TLD"
 	case ResultTotalsLineNotEmpty:
 		return "the second field of the totals line must be empty"
 	case ResultNotUTF8:
 		return "re-encode the file as UTF-8 before resubmitting"
 	case ResultInvalidDateInURL:
 		return "the month must be YYYY-MM; pass --month to override what was read from the filename"
-	case ResultInterfaceDisabled:
-		return "the interface is disabled for this TLD; this is the one rejection worth retrying later"
-	case ResultDateInFuture:
-		return "ICANN accepts a month only once it has ended"
-	case ResultRegistrarNotAccredited:
-		return "one of the registrars in the report is not ICANN-accredited for this TLD"
 	default:
 		return ""
 	}

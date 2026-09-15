@@ -10,7 +10,7 @@ Go client library for ICANN MOSAPI (and future RRI) with pluggable authenticatio
 - Environments: `prod` and `ote`
 - Auth:
   - Basic (username/password)
-	- TLS client certificate (aka "TLSA" here) via PEM strings
+	- TLS client certificate (`AUTH_TYPE_CERT`) via PEM strings
 - Sensible defaults (`prod`, `v2`, `ry` entity)
 
 ## Install
@@ -63,12 +63,12 @@ if err != nil { /* handle */ }
 // use msc.Client (embedded base client) or add MOSAPI resource methods on `msc`
 ```
 
-### TLS client certificate ("TLSA") auth (PEM strings)
+### TLS client certificate auth (PEM strings)
 
 ```go
 cfg := base.Config{
 	TLD:         "example",
-	AuthType:    base.AUTH_TYPE_TLSA,
+	AuthType:    base.AUTH_TYPE_CERT,
 	CertificatePEM: "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n",
 	KeyPEM:         "-----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----\n",
 	Environment: base.ENV_OTE,
@@ -266,16 +266,16 @@ INI format example (per-TLD profiles):
 ```
 ; You can omit tld if the section name equals the TLD
 [example]
-auth_type = basic            ; basic | tlsa
+auth_type = basic            ; basic | cert
 username  = myuser           ; for basic
 password  = mypass           ; for basic
 environment = prod           ; default prod
 version     = v2             ; default v2
-entity      = ry             ; default ry
+role        = registry        ; registry | registrar, default registry
 
-; TLSA using PEM strings (use \n for newlines or INI multi-line)
-[example-tlsa]
-auth_type = tlsa
+; A TLS client certificate, using PEM strings (use \n for newlines or INI multi-line)
+[example-cert]
+auth_type = cert
 certificate_pem = -----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n
 key_pem = -----BEGIN RSA PRIVATE KEY-----\n...\n-----END RSA PRIVATE KEY-----\n
 environment = ote
@@ -285,9 +285,22 @@ environment = ote
 ; key_passphrase = your_passphrase_here
 ```
 
-Flags always override file/env values. For TLSA, prefer certificate_pem and key_pem.
+Flags always override file/env values. For `auth_type = cert`, prefer certificate_pem and key_pem.
 
 ### Commands
+
+- One-shot compliance summary
+
+```
+./icann status --tld example \
+	--credentials-file ~/.icann/credentials
+```
+
+Combines SLA monitoring status and ICANN's reporting-obligation status into a
+single check: "is this TLD in good standing right now?" Prints a short
+human-readable summary by default; add `--json` for the structured data
+underneath. Exits non-zero if SLA monitoring reports the TLD down, any
+reporting obligation is unsatisfactory, or either check could not be reached.
 
 - Get TLD monitoring state
 
@@ -300,12 +313,12 @@ Available flags on `icann get ...` commands:
 
 - `--tld` TLD (required if not provided in credentials)
 - `--env` prod|ote
-- `--auth` basic|tlsa
+- `--auth` basic|cert
 - `--username` / `--password` (for basic)
-- `--cert-pem` / `--key-pem` (for tlsa)
+- `--cert-pem` / `--key-pem` (for cert)
 - `--key-passphrase` (for encrypted private keys)
 - `--api-version` (default v2)
-- `--entity` (default ry)
+- `--role` registry|registrar (default registry) — which side of the API you're calling as
 - `--profile` (default env ICANN_PROFILE or 'default')
 - `--credentials-file` (default env ICANN_SHARED_CREDENTIALS_FILE or `~/.icann/credentials`)
 
@@ -315,26 +328,26 @@ Global flags:
 
 Output is pretty-printed JSON of the `StateResponse`.
 
-- Domain METRICA
+- Domain abuse reports (METRICA/DAAR)
 
 	- Latest report
 
 	```
-	./icann get metrica latest --tld example \
+	./icann get abuse latest --tld example \
 		--credentials-file ~/.icann/credentials
 	```
 
 	- Report for a specific date
 
 	```
-	./icann get metrica date 2024-02-20 --tld example \
+	./icann get abuse date 2024-02-20 --tld example \
 		--credentials-file ~/.icann/credentials
 	```
 
 	- List available reports (optional filters)
 
 	```
-	./icann get metrica lists --tld example \
+	./icann get abuse lists --tld example \
 		--start-date 2025-01-01 --end-date 2025-01-31 \
 		--credentials-file ~/.icann/credentials
 	```
@@ -343,13 +356,15 @@ Output is pretty-printed JSON of the `StateResponse`.
 
 	- RRI
 
-		- Check Ry Escrow report status for a date
+		- Check whether ICANN holds a registry escrow deposit for a date
 
 		```
 		./icann get escrow status --tld example \
 			--date 2025-10-22 \
 			--credentials-file ~/.icann/credentials
 		```
+
+		`--date` defaults to today if omitted.
 
 		Output is a small JSON object like:
 
@@ -577,6 +592,7 @@ Notes:
 - The module follows SemVer. While in v0, minor versions (v0.x) may include breaking changes.
 - Public API stability will be guaranteed starting at v1.0.0. We’ll avoid breaking changes in v0 unless necessary and document them in the Changelog.
 - CLI: the legacy `mosapi` and `rri` command groups were removed in favour of the flattened `icann get ...` commands, as was the undocumented `icann get state` (use `icann get tld status`, which prints the same thing).
+- CLI: `--entity` was renamed `--role` (values `registry`/`registrar` instead of `ry`/`rr`), `--auth tlsa` was renamed `--auth cert`, and `icann get metrica ...` was renamed `icann get abuse ...`, to replace ICANN's internal abbreviations with plain language. See `CHANGELOG.md` for the full list and the compatibility kept at the credentials-file layer.
 - The module path is `github.com/onasunnymorning/icann-client` and will remain for v1. Major versions `v2+` will use the Go Modules path suffix convention.
 
 See `CHANGELOG.md` for detailed changes.

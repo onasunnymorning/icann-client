@@ -6,10 +6,9 @@ import "github.com/spf13/cobra"
 // getCmd is a grouping command for read-style operations
 var getCmd = &cobra.Command{
 	Use:   "get",
-	Short: "Get resources",
-	// A group, not a command: reject an unknown subcommand instead of
-	// silently printing help and exiting 0.
-	Args: cobra.NoArgs,
+	Short: "Check the status of a TLD's reports and monitoring",
+	Args:  cobra.NoArgs,
+	RunE:  requireSubcommand,
 }
 
 func init() { RootCmd.AddCommand(getCmd) }
