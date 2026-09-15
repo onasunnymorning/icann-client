@@ -73,6 +73,9 @@ var newRRIClient = rri.New
 var submitEscrowCmd = &cobra.Command{
 	Use:   "escrow",
 	Short: "Registry escrow operations",
+	// A group, not a command: reject an unknown subcommand instead of
+	// silently printing help and exiting 0.
+	Args: cobra.NoArgs,
 }
 
 var submitEscrowReportCmd = &cobra.Command{

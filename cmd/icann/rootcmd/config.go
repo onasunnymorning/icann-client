@@ -17,6 +17,9 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Inspect resolved configuration and credentials",
+	// A group, not a command: reject an unknown subcommand instead of
+	// silently printing help and exiting 0.
+	Args: cobra.NoArgs,
 }
 
 var configShowCmd = &cobra.Command{

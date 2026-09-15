@@ -1,9 +1,6 @@
 package rootcmd
 
 import (
-	"encoding/json"
-	"os"
-
 	"github.com/onasunnymorning/icann-client/mosapi"
 	"github.com/spf13/cobra"
 )
@@ -24,9 +21,7 @@ var tldStatusCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "  ")
-		return enc.Encode(sr)
+		return printJSON(sr)
 	},
 }
 
