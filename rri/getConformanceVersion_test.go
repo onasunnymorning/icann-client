@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net/http"
 	"reflect"
+	"strings"
 	"testing"
 
 	base "github.com/onasunnymorning/icann-client/client"
@@ -83,21 +84,36 @@ func TestGetConformanceVersionNotFoundDoesNotShareState(t *testing.T) {
 }
 
 func TestGetConformanceVersionErrors(t *testing.T) {
-	for name, h := range map[string]http.HandlerFunc{
-		"500": func(w http.ResponseWriter, r *http.Request) {
+	t.Run("500 is an HTTP failure", func(t *testing.T) {
+		c := newTestRRI(t, func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
-		},
-		"200 with a body that is not the document": func(w http.ResponseWriter, r *http.Request) {
-			w.Write([]byte("not xml at all"))
-		},
-	} {
-		t.Run(name, func(t *testing.T) {
-			c := newTestRRI(t, h)
-			got, err := c.GetConformanceVersion(t.Context())
-			var he *base.HTTPError
-			if !errors.As(err, &he) {
-				t.Fatalf("error = %v (%T), want *client.HTTPError, got %+v", err, err, got)
-			}
 		})
-	}
+		got, err := c.GetConformanceVersion(t.Context())
+		var he *base.HTTPError
+		if !errors.As(err, &he) {
+			t.Fatalf("error = %v (%T), want *client.HTTPError, got %+v", err, err, got)
+		}
+	})
+
+	// A 200 whose body will not decode is not an HTTP failure. Reporting it as
+	// one produced "http error: 200", which describes a successful request and
+	// sends the reader looking in the wrong place.
+	t.Run("200 with a body that is not the document", func(t *testing.T) {
+		c := newTestRRI(t, func(w http.ResponseWriter, r *http.Request) {
+			w.Write([]byte("not xml at all"))
+		})
+		got, err := c.GetConformanceVersion(t.Context())
+		if err == nil {
+			t.Fatalf("error = nil, got %+v", got)
+		}
+		var he *base.HTTPError
+		if errors.As(err, &he) {
+			t.Errorf("error is a *client.HTTPError (%v); the cause is the payload, not the request", err)
+		}
+		for _, want := range []string{"HTTP 200", "conformance document", "not xml at all"} {
+			if !strings.Contains(err.Error(), want) {
+				t.Errorf("error %q does not mention %q", err, want)
+			}
+		}
+	})
 }

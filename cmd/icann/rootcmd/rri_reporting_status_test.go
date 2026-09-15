@@ -50,35 +50,21 @@ func runGetCmd(t *testing.T, cmd *cobra.Command, args []string, h http.HandlerFu
 	return stdout.Bytes(), paths, runErr
 }
 
-// summaryFixture is inlined rather than read from rri/testdata, so this test
-// does not depend on a relative path reaching into another package.
-const summaryFixture = `<?xml version="1.0" encoding="UTF-8"?>
-<rriReporting:summary
-  xmlns:rriReporting="urn:ietf:params:xml:ns:rriReporting-1.0"
-  xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
-  <rdeHeader:tld>example</rdeHeader:tld>
-  <rriReporting:depositSchedule>Daily</rriReporting:depositSchedule>
-  <rriReporting:statusReports>
-    <rriReporting:statusReport>
-      <rriReporting:type>DEA_Notification</rriReporting:type>
-      <rriReporting:enabled>true</rriReporting:enabled>
-      <rriReporting:status>unsatisfactory</rriReporting:status>
-      <rriReporting:issues>
-        <rriReporting:issue date="2026-01-01" description="No_Report_Received" />
-        <rriReporting:issue date="2025-12-30" description="Invalid_Deposit_Full" />
-      </rriReporting:issues>
-    </rriReporting:statusReport>
-    <rriReporting:statusReport>
-      <rriReporting:type>Registry_Functions_Activity_Report</rriReporting:type>
-      <rriReporting:enabled>true</rriReporting:enabled>
-      <rriReporting:status>ok</rriReporting:status>
-    </rriReporting:statusReport>
-  </rriReporting:statusReports>
-</rriReporting:summary>`
+// summaryFixture is a capture of a real production response, with the TLD
+// changed. ICANN serves JSON here, not the XML the draft describes.
+const summaryFixture = `{
+  "tld" : { "name" : "example" },
+  "paths" : [
+    { "path" : "Full", "status" : "ok" },
+    { "path" : "PRTR", "status" : "unsatisfactory" },
+    { "path" : "RFAR", "status" : "ok" }
+  ],
+  "created" : "2026-09-15T00:44:03.230Z"
+}`
 
 func TestReportingStatusCmd(t *testing.T) {
 	out, paths, err := runGetCmd(t, rriReportingStatusCmd, nil, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/xml")
+		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(summaryFixture))
 	})
 	if err != nil {
@@ -93,16 +79,22 @@ func TestReportingStatusCmd(t *testing.T) {
 		t.Fatalf("decoding stdout %q: %v", out, err)
 	}
 	// Without --issues-only every obligation is reported, satisfied or not.
-	if len(got.Reports) != 2 {
-		t.Errorf("reports = %d, want both obligations from the fixture", len(got.Reports))
+	if len(got.Paths) != 3 {
+		t.Errorf("paths = %d, want all three from the fixture", len(got.Paths))
+	}
+	if got.TLD != "example" {
+		t.Errorf("tld = %q, want example: ICANN nests it as {\"tld\": {\"name\": ...}}", got.TLD)
+	}
+	if got.Created == "" {
+		t.Error("created is empty; it is the only timestamp in the answer")
 	}
 }
 
 // TestReportingStatusIssuesOnly is the form a script uses: the unsatisfactory
-// obligations on stdout and a non-zero exit, so a backfill check fails loudly.
+// obligations on stdout and a non-zero exit, so a check fails loudly.
 func TestReportingStatusIssuesOnly(t *testing.T) {
 	out, _, err := runGetCmd(t, rriReportingStatusCmd, []string{"--issues-only"}, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/xml")
+		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(summaryFixture))
 	})
 	if err == nil {
@@ -116,33 +108,26 @@ func TestReportingStatusIssuesOnly(t *testing.T) {
 	if err := json.Unmarshal(out, &got); err != nil {
 		t.Fatalf("decoding stdout %q: %v", out, err)
 	}
-	if len(got.Reports) != 1 || got.Reports[0].Type != rri.ReportingDEANotification {
-		t.Errorf("reports = %+v, want only the unsatisfactory one", got.Reports)
-	}
-	if len(got.Reports[0].Issues) != 2 {
-		t.Errorf("issues = %+v, want the dates ICANN is missing to survive the filter", got.Reports[0].Issues)
+	if len(got.Paths) != 1 || got.Paths[0].Path != rri.ReportingPathPRTR {
+		t.Errorf("paths = %+v, want only the unsatisfactory one", got.Paths)
 	}
 }
 
 // TestReportingStatusIssuesOnlyClean is the other half: a TLD that is square
-// with ICANN must exit zero, or the check is useless.
+// with ICANN must exit zero, or the check is useless. This is what .radio
+// actually returns.
 func TestReportingStatusIssuesOnlyClean(t *testing.T) {
-	const clean = `<?xml version="1.0" encoding="UTF-8"?>
-<rriReporting:summary
-  xmlns:rriReporting="urn:ietf:params:xml:ns:rriReporting-1.0"
-  xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
-  <rdeHeader:tld>example</rdeHeader:tld>
-  <rriReporting:statusReports>
-    <rriReporting:statusReport>
-      <rriReporting:type>Registry_Escrow_Report</rriReporting:type>
-      <rriReporting:enabled>true</rriReporting:enabled>
-      <rriReporting:status>ok</rriReporting:status>
-    </rriReporting:statusReport>
-  </rriReporting:statusReports>
-</rriReporting:summary>`
+	const clean = `{
+  "tld" : { "name" : "example" },
+  "paths" : [
+    { "path" : "Full", "status" : "ok" },
+    { "path" : "RFAR", "status" : "ok" }
+  ],
+  "created" : "2026-09-15T00:44:03.230Z"
+}`
 
 	out, _, err := runGetCmd(t, rriReportingStatusCmd, []string{"--issues-only"}, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/xml")
+		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(clean))
 	})
 	if err != nil {
@@ -152,8 +137,8 @@ func TestReportingStatusIssuesOnlyClean(t *testing.T) {
 	if err := json.Unmarshal(out, &got); err != nil {
 		t.Fatalf("decoding stdout %q: %v", out, err)
 	}
-	if len(got.Reports) != 0 {
-		t.Errorf("reports = %+v, want none", got.Reports)
+	if len(got.Paths) != 0 {
+		t.Errorf("paths = %+v, want none", got.Paths)
 	}
 }
 

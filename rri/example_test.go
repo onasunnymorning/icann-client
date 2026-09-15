@@ -118,29 +118,18 @@ func ExampleClient_SubmitMonthlyReport() {
 }
 
 func ExampleClient_GetReportingStatus() {
-	// Fake RRI reporting status endpoint.
+	// Fake RRI reporting status endpoint. ICANN serves JSON here, not the XML
+	// the draft describes.
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/info/status/registry/example" {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		w.Header().Set("Content-Type", "text/xml")
-		fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?>
-<rriReporting:summary
-  xmlns:rriReporting="urn:ietf:params:xml:ns:rriReporting-1.0"
-  xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
-  <rdeHeader:tld>example</rdeHeader:tld>
-  <rriReporting:statusReports>
-    <rriReporting:statusReport>
-      <rriReporting:type>Registry_Functions_Activity_Report</rriReporting:type>
-      <rriReporting:enabled>true</rriReporting:enabled>
-      <rriReporting:status>unsatisfactory</rriReporting:status>
-      <rriReporting:issues>
-        <rriReporting:issue date="2026-08-01" description="No_Report_Received" />
-      </rriReporting:issues>
-    </rriReporting:statusReport>
-  </rriReporting:statusReports>
-</rriReporting:summary>`)
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprint(w, `{"tld":{"name":"example"},"paths":[
+			{"path":"Full","status":"ok"},
+			{"path":"RFAR","status":"unsatisfactory"}],
+			"created":"2026-09-15T00:44:03.230Z"}`)
 	}))
 	defer srv.Close()
 
@@ -152,10 +141,8 @@ func ExampleClient_GetReportingStatus() {
 		fmt.Println("error:", err)
 		return
 	}
-	for _, r := range summary.Unsatisfactory() {
-		for _, issue := range r.Issues {
-			fmt.Printf("%s: %s on %s\n", r.Type, issue.Description, issue.Date)
-		}
+	for _, p := range summary.Unsatisfactory() {
+		fmt.Printf("%s: %s\n", p.Path, p.Status)
 	}
-	// Output: Registry_Functions_Activity_Report: No_Report_Received on 2026-08-01
+	// Output: RFAR: unsatisfactory
 }

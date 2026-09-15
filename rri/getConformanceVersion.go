@@ -53,13 +53,20 @@ func (c *Client) GetConformanceVersion(ctx context.Context) (*Conformance, error
 	// proven against production, sends none either. doXMLGet parses the body
 	// as XML regardless of the Content-Type it arrives with.
 
-	var doc xmlConformance
-	status, err := c.doXMLGet(req, &doc)
+	raw, status, err := c.doGet(req)
 	if status == http.StatusNotFound {
 		return &Conformance{Specifications: append([]string(nil), conformanceBefore404...), Inferred: true}, nil
 	}
 	if err != nil {
 		return nil, err
+	}
+
+	// The draft specifies XML here. Production answers 404, so this branch is
+	// unexercised against ICANN; note that the reporting summary, the one read
+	// endpoint that does answer, serves JSON instead.
+	var doc xmlConformance
+	if err := newXMLDecoder(raw).Decode(&doc); err != nil {
+		return nil, decodeError(req, "a conformance document", raw, err)
 	}
 	return &Conformance{Specifications: doc.Specifications}, nil
 }
