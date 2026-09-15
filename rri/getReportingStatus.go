@@ -136,7 +136,12 @@ func (c *Client) GetReportingStatus(ctx context.Context) (*ReportingSummary, err
 	if err != nil {
 		return nil, err
 	}
-	req.Header.Set("Accept", "text/xml")
+	// No Accept header. The draft requires none, and ICANN answered
+	// "406 Not Acceptable" to Accept: text/xml on the reporting status
+	// endpoint, so constraining the response is strictly worse than letting
+	// the server send what it sends. GetRyEscrowReportStatus, the one RRI GET
+	// proven against production, sends none either. doXMLGet parses the body
+	// as XML regardless of the Content-Type it arrives with.
 
 	var doc xmlReportingSummary
 	if _, err := c.doXMLGet(req, &doc); err != nil {
