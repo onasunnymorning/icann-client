@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
-## [Unreleased]
+## [v0.5.0] - 2026-09-14
 
 ### Changed
 - **Breaking:** `--entity ry|rr` is now `--role registry|registrar` on every command, and the credentials-file key is now `role` (accepting `registry`/`registrar`; `ry`/`rr` and the old `entity` key still work, untouched, for compatibility). `--role` (and `role` in the file) describes which side of the API you're calling as in plain language instead of ICANN's internal path-segment abbreviation.
