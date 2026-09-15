@@ -153,7 +153,10 @@ func (c *Client) GetReportingStatus(ctx context.Context) (*ReportingSummary, err
 	for _, r := range doc.StatusReports.Reports {
 		st := ReportTypeStatus{Type: r.Type, Enabled: r.Enabled, Status: r.Status}
 		for _, i := range r.Issues.Issues {
-			st.Issues = append(st.Issues, ReportingIssue{Date: i.Date, Description: i.Description})
+			// xmlIssue exists only to carry the XML attribute tags; its fields
+			// are the same as ReportingIssue's, so a conversion suffices and a
+			// field added to either side becomes a compile error here.
+			st.Issues = append(st.Issues, ReportingIssue(i))
 		}
 		out.Reports = append(out.Reports, st)
 	}
