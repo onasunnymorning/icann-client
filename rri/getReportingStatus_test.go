@@ -30,8 +30,10 @@ func TestGetReportingStatusRequestShape(t *testing.T) {
 	if want := "/info/status/registry/example"; gotPath != want {
 		t.Errorf("path = %q, want %q", gotPath, want)
 	}
-	if gotAccept != "text/xml" {
-		t.Errorf("Accept = %q, want text/xml", gotAccept)
+	// ICANN answered 406 Not Acceptable to Accept: text/xml here, and the
+	// draft requires no Accept header at all, so sending one is a regression.
+	if gotAccept != "" {
+		t.Errorf("Accept = %q, want no Accept header: ICANN rejects a constrained one with 406", gotAccept)
 	}
 }
 

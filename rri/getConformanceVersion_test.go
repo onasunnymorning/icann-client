@@ -10,9 +10,9 @@ import (
 )
 
 func TestGetConformanceVersion(t *testing.T) {
-	var gotMethod, gotPath string
+	var gotMethod, gotPath, gotAccept string
 	c := newTestRRI(t, func(w http.ResponseWriter, r *http.Request) {
-		gotMethod, gotPath = r.Method, r.URL.Path
+		gotMethod, gotPath, gotAccept = r.Method, r.URL.Path, r.Header.Get("Accept")
 		w.Header().Set("Content-Type", "text/xml")
 		w.Write(readFixture(t, "conformance-version.xml"))
 	})
@@ -23,6 +23,11 @@ func TestGetConformanceVersion(t *testing.T) {
 	}
 	if gotMethod != http.MethodGet || gotPath != "/info/status/conformance-version" {
 		t.Errorf("request = %s %s, want GET /info/status/conformance-version", gotMethod, gotPath)
+	}
+	// See the note in TestGetReportingStatusRequestShape: the draft requires no
+	// Accept header, and constraining one drew a 406 from production.
+	if gotAccept != "" {
+		t.Errorf("Accept = %q, want no Accept header", gotAccept)
 	}
 	want := &Conformance{Specifications: []string{
 		"draft-lozano-icann-registry-interfaces-26",
