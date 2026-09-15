@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<summary
+  xmlns="urn:ietf:params:xml:ns:rriReporting-1.0"
+  xmlns:h="urn:ietf:params:xml:ns:rdeHeader-1.0">
+  <h:tld>example</h:tld>
+  <creationDate>2026-01-02T12:00:30.101Z</creationDate>
+  <depositSchedule>Daily</depositSchedule>
+  <lastFullDate>2026-01-01</lastFullDate>
+  <statusReports>
+    <statusReport>
+      <type>DEA_Notification</type>
+      <enabled>true</enabled>
+      <status>unsatisfactory</status>
+      <issues>
+        <issue date="2026-01-01" description="No_Report_Received" />
+        <issue date="2025-12-30" description="Invalid_Deposit_Full" />
+      </issues>
+    </statusReport>
+    <statusReport>
+      <type>Registry_Functions_Activity_Report</type>
+      <enabled>true</enabled>
+      <status>ok</status>
+    </statusReport>
+  </statusReports>
+  <timestamp>2026-01-02T12:00:00.000Z</timestamp>
+</summary>
