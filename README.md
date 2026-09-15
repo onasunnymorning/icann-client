@@ -384,33 +384,38 @@ Output is pretty-printed JSON of the `StateResponse`.
 			--credentials-file ~/.icann/credentials
 		```
 
-		This is ICANN's own view of the TLD: which reporting obligations are
-		enabled, whether each is satisfied, and every dated issue recorded
-		against it. It answers "which reports does ICANN think are missing?"
-		without submitting anything.
+		ICANN's own view of the TLD: each reporting obligation and whether it is
+		currently satisfied.
 
 		```json
 		{
 		  "tld": "example",
-		  "depositSchedule": "Daily",
-		  "lastFullDate": "2026-01-01",
-		  "reports": [
-		    {
-		      "type": "DEA_Notification",
-		      "enabled": true,
-		      "status": "unsatisfactory",
-		      "issues": [
-		        { "date": "2026-01-01", "description": "No_Report_Received" }
-		      ]
-		    },
-		    {
-		      "type": "Registry_Functions_Activity_Report",
-		      "enabled": true,
-		      "status": "ok"
-		    }
-		  ]
+		  "paths": [
+		    { "path": "Full", "status": "ok" },
+		    { "path": "Diff", "status": "ok" },
+		    { "path": "Dea", "status": "ok" },
+		    { "path": "PRTR", "status": "ok" },
+		    { "path": "RFAR", "status": "ok" },
+		    { "path": "Registry", "status": "ok" }
+		  ],
+		  "created": "2026-09-15T00:44:03.230Z"
 		}
 		```
+
+		`PRTR` is the per-registrar transactions report and `RFAR` the registry
+		functions activity report; `Full`, `Diff` and `Dea` are the escrow
+		deposits and the escrow agent notification.
+
+		**This is a snapshot, not a history.** `created` is the moment ICANN
+		generated the answer, and there are no other dates in it: each `status`
+		describes the obligation as of then. So it tells you whether the TLD is
+		square with ICANN right now, not which periods were ever missed. To ask
+		about a particular period, use `icann get monthly status` or
+		`icann get escrow status`.
+
+		Note that ICANN serves JSON on this endpoint, not the XML document
+		described in `draft-lozano-icann-registry-interfaces` Section 6.
+		Production refuses `Accept: text/xml` here with HTTP 406.
 
 		Add `--issues-only` to narrow the output to the unsatisfactory
 		obligations and exit non-zero while any remain, so the command works as

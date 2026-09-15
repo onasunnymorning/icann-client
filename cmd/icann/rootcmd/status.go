@@ -17,23 +17,15 @@ var flagStatusJSON bool
 // variable, like newRRIClient, so tests can point it at a stub server.
 var newMosapiClient = mosapi.New
 
-// reportingTypeLabels translates ICANN's reporting-obligation type constants
+// reportingPathLabels translates ICANN's reporting-obligation path constants
 // into plain language for `icann status`'s human-readable summary.
-var reportingTypeLabels = map[string]string{
-	rri.ReportingDEANotification:    "Escrow agent notification (DEA)",
-	rri.ReportingEscrowReport:       "Registry escrow deposits (Specification 2)",
-	rri.ReportingTransactionsReport: "Monthly per-registrar transactions report (Specification 3)",
-	rri.ReportingActivityReport:     "Monthly registry-functions activity report (Specification 3)",
-}
-
-// reportingIssueLabels translates ICANN's issue-description constants into
-// plain language.
-var reportingIssueLabels = map[string]string{
-	rri.IssueMissingDepositFull: "a full deposit was never received",
-	rri.IssueMissingDepositDiff: "a differential deposit was never received",
-	rri.IssueInvalidDepositFull: "a full deposit arrived but did not validate",
-	rri.IssueInvalidDepositDiff: "a differential deposit arrived but did not validate",
-	rri.IssueNoReportReceived:   "no report arrived for that date",
+var reportingPathLabels = map[string]string{
+	rri.ReportingPathFull:     "Full registry escrow deposit",
+	rri.ReportingPathDiff:     "Differential registry escrow deposit",
+	rri.ReportingPathDea:      "Escrow agent notification (DEA)",
+	rri.ReportingPathPRTR:     "Monthly per-registrar transactions report (Specification 3)",
+	rri.ReportingPathRFAR:     "Monthly registry-functions activity report (Specification 3)",
+	rri.ReportingPathRegistry: "Registry",
 }
 
 // statusReport is the combined, at-a-glance view `icann status` prints: SLA
@@ -52,14 +44,17 @@ var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show whether this TLD is compliant with ICANN right now",
 	Long: `Show a one-shot operational summary for the TLD: SLA/uptime monitoring
-status and ICANN's own view of which reporting obligations (registry escrow,
-the Specification 3 monthly reports, and the escrow agent's notification) are
-satisfied.
+status and ICANN's own current view of each reporting obligation (registry
+escrow, the Specification 3 monthly reports, and the escrow agent's
+notification).
 
 This combines 'icann get tld status' and 'icann get reporting status' into a
 single check, so you don't need to already know the command tree to answer
-"is this TLD in good standing right now?". The default output is a short
-human-readable summary; pass --json for the underlying structured data.
+"is this TLD in good standing right now?". Like 'icann get reporting status',
+the reporting half is a snapshot, not a history: it says whether each
+obligation is currently satisfied, not which periods were ever missed. The
+default output is a short human-readable summary; pass --json for the
+underlying structured data.
 
 Exits non-zero if SLA monitoring reports the TLD down, any reporting
 obligation is unsatisfactory, or either check could not be reached — so it
@@ -144,26 +139,19 @@ func printStatusSummary(w io.Writer, out statusReport) {
 		}
 	}
 
-	fmt.Fprintln(w, "\nReporting obligations:")
+	fmt.Fprintln(w, "\nReporting obligations (as of ICANN's last snapshot):")
 	if out.ReportingError != "" {
 		fmt.Fprintf(w, "  could not check: %s\n", out.ReportingError)
 	} else {
-		for _, r := range out.Reporting.Reports {
-			label := reportingTypeLabels[r.Type]
+		for _, p := range out.Reporting.Paths {
+			label := reportingPathLabels[p.Path]
 			if label == "" {
-				label = r.Type
+				label = p.Path
 			}
-			mark := "ok"
-			if r.Status != rri.ReportingStatusOK {
-				mark = "UNSATISFACTORY"
-			}
-			fmt.Fprintf(w, "  [%s] %s\n", mark, label)
-			for _, issue := range r.Issues {
-				desc := reportingIssueLabels[issue.Description]
-				if desc == "" {
-					desc = issue.Description
-				}
-				fmt.Fprintf(w, "      %s: %s\n", issue.Date, desc)
+			if p.Status == rri.ReportingStatusOK {
+				fmt.Fprintf(w, "  [ok] %s\n", label)
+			} else {
+				fmt.Fprintf(w, "  [UNSATISFACTORY] %s (status: %s)\n", label, p.Status)
 			}
 		}
 	}

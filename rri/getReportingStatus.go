@@ -2,133 +2,82 @@ package rri
 
 import (
 	"context"
-	"encoding/xml"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/url"
 )
 
-// NamespaceRRIReporting is the XML namespace of the reporting status document.
-const NamespaceRRIReporting = "urn:ietf:params:xml:ns:rriReporting-1.0"
-
-// The reporting obligations ICANN tracks per TLD.
+// The reporting obligations ICANN tracks per TLD, as returned in the "path"
+// field. These are the spellings production uses; they are not the element
+// names in draft-lozano-icann-registry-interfaces, which describes a different
+// document for this endpoint than ICANN actually serves.
 const (
-	ReportingDEANotification    = "DEA_Notification"                           // the escrow agent's notification
-	ReportingEscrowReport       = "Registry_Escrow_Report"                     // Specification 2
-	ReportingTransactionsReport = "Registry_Per_Registrar_Transactions_Report" // Specification 3 Section 1
-	ReportingActivityReport     = "Registry_Functions_Activity_Report"         // Specification 3 Section 2
+	ReportingPathFull     = "Full" // full registry escrow deposit
+	ReportingPathDiff     = "Diff" // differential registry escrow deposit
+	ReportingPathDea      = "Dea"  // data escrow agent notification
+	ReportingPathPRTR     = "PRTR" // per-registrar transactions report (Specification 3 Section 1)
+	ReportingPathRFAR     = "RFAR" // registry functions activity report (Specification 3 Section 2)
+	ReportingPathRegistry = "Registry"
 )
 
-// Values of ReportTypeStatus.Status.
-const (
-	ReportingStatusOK             = "ok"
-	ReportingStatusUnsatisfactory = "unsatisfactory"
-)
+// ReportingStatusOK is the status of an obligation ICANN has no complaint
+// about. Any other value is a complaint; ICANN does not publish the set.
+const ReportingStatusOK = "ok"
 
-// Values of ReportingIssue.Description.
-const (
-	IssueMissingDepositFull = "Missing_Deposit_Full" // a full deposit was never received
-	IssueMissingDepositDiff = "Missing_Deposit_Diff" // a differential deposit was never received
-	IssueInvalidDepositFull = "Invalid_Deposit_Full" // a full deposit arrived but did not validate
-	IssueInvalidDepositDiff = "Invalid_Deposit_Diff" // a differential deposit arrived but did not validate
-	IssueNoReportReceived   = "No_Report_Received"   // no report at all arrived for that date
-)
-
-// Values of ReportingSummary.DepositSchedule.
-const (
-	DepositScheduleNone   = "None"
-	DepositScheduleWeekly = "Weekly"
-	DepositScheduleDaily  = "Daily"
-)
-
-// ReportingIssue is one dated problem ICANN has recorded against a reporting
-// obligation.
-type ReportingIssue struct {
-	Date        string `json:"date"`        // YYYY-MM-DD
-	Description string `json:"description"` // one of the Issue* constants
+// ReportingPath is ICANN's current view of one reporting obligation.
+type ReportingPath struct {
+	Path   string `json:"path"`   // one of the ReportingPath* constants
+	Status string `json:"status"` // "ok", or a complaint
 }
 
-// ReportTypeStatus is ICANN's view of one reporting obligation for the TLD.
-type ReportTypeStatus struct {
-	Type    string           `json:"type"` // one of the Reporting* type constants
-	Enabled bool             `json:"enabled"`
-	Status  string           `json:"status"` // ok or unsatisfactory
-	Issues  []ReportingIssue `json:"issues,omitempty"`
-}
-
-// ReportingSummary is the per-TLD reporting status ICANN maintains: which
-// obligations are enabled, whether each is satisfied, and every dated issue
-// recorded against it.
+// ReportingSummary is ICANN's reporting status for a TLD.
 //
-// Dates are kept as strings because ICANN sends two different shapes —
-// CreationDate and Timestamp are full timestamps, LastFullDate and an issue's
-// Date are plain YYYY-MM-DD — and every consumer either prints them or
-// compares them lexically, which both shapes support.
+// It is a snapshot, not a history: Created is the moment ICANN generated the
+// response, and each Status describes the obligation as of then. The response
+// carries no date range and no per-date detail, so it reports whether an
+// obligation is currently satisfied but not which periods were ever missed.
 type ReportingSummary struct {
-	TLD             string             `json:"tld"`
-	CreationDate    string             `json:"creationDate,omitempty"`
-	DepositSchedule string             `json:"depositSchedule,omitempty"` // None, Weekly or Daily
-	LastFullDate    string             `json:"lastFullDate,omitempty"`
-	Timestamp       string             `json:"timestamp,omitempty"`
-	Reports         []ReportTypeStatus `json:"reports"`
+	TLD     string          `json:"tld"`
+	Paths   []ReportingPath `json:"paths"`
+	Created string          `json:"created"` // when ICANN generated this snapshot
 }
 
-// Unsatisfactory returns the reporting obligations ICANN is not satisfied
-// with. An empty result means the TLD is square with ICANN.
-func (s *ReportingSummary) Unsatisfactory() []ReportTypeStatus {
-	var out []ReportTypeStatus
-	for _, r := range s.Reports {
-		if r.Status != ReportingStatusOK {
-			out = append(out, r)
+// Unsatisfactory returns the reporting obligations ICANN is not currently
+// satisfied with. An empty result means the TLD is square with ICANN as of
+// Created.
+func (s *ReportingSummary) Unsatisfactory() []ReportingPath {
+	var out []ReportingPath
+	for _, p := range s.Paths {
+		if p.Status != ReportingStatusOK {
+			out = append(out, p)
 		}
 	}
 	return out
 }
 
-// xmlReportingSummary and friends are decode-only mirrors of the response.
-// The tags are namespace-qualified so a document using a different prefix, or
-// declaring a namespace as the default, decodes identically. Note that tld
-// comes from the rdeHeader namespace, not the rriReporting one.
-type xmlReportingSummary struct {
-	XMLName         xml.Name         `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 summary"`
-	TLD             string           `xml:"urn:ietf:params:xml:ns:rdeHeader-1.0 tld"`
-	CreationDate    string           `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 creationDate"`
-	DepositSchedule string           `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 depositSchedule"`
-	LastFullDate    string           `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 lastFullDate"`
-	Timestamp       string           `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 timestamp"`
-	StatusReports   xmlStatusReports `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 statusReports"`
+// jsonReportingSummary is a decode-only mirror of what ICANN sends. It exists
+// because the TLD arrives nested as {"tld": {"name": "..."}}, which is not a
+// shape worth exposing to callers.
+type jsonReportingSummary struct {
+	TLD struct {
+		Name string `json:"name"`
+	} `json:"tld"`
+	Paths   []ReportingPath `json:"paths"`
+	Created string          `json:"created"`
 }
 
-// The wrapper elements are modelled as their own structs rather than with the
-// encoding/xml "parent>child" path syntax, which silently ignores a namespace
-// on the path segments and decodes nothing at all.
-type xmlStatusReports struct {
-	Reports []xmlStatusReport `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 statusReport"`
-}
-
-type xmlStatusReport struct {
-	Type    string    `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 type"`
-	Enabled bool      `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 enabled"`
-	Status  string    `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 status"`
-	Issues  xmlIssues `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 issues"`
-}
-
-type xmlIssues struct {
-	Issues []xmlIssue `xml:"urn:ietf:params:xml:ns:rriReporting-1.0 issue"`
-}
-
-type xmlIssue struct {
-	Date        string `xml:"date,attr"`
-	Description string `xml:"description,attr"`
-}
-
-// GetReportingStatus returns ICANN's own view of the client's TLD reporting:
-// which obligations are enabled, whether each is satisfied, and every dated
-// issue recorded against it, per
-// draft-lozano-icann-registry-interfaces Section 6.
+// GetReportingStatus returns ICANN's current view of the client's TLD
+// reporting: each obligation and whether ICANN is satisfied with it.
 //
-// This is the endpoint that answers "which reports does ICANN think are
-// missing?" without submitting anything.
+// Note that ICANN serves JSON here, not the XML document described by
+// draft-lozano-icann-registry-interfaces Section 6. Production refuses
+// "Accept: text/xml" on this endpoint with HTTP 406, so no Accept header is
+// sent and the response is decoded as JSON.
+//
+// The answer is a snapshot with no dates in it, so it says whether a TLD is
+// currently square with ICANN, not which reporting periods were missed. Use
+// GetMonthlyReportStatus or GetRyEscrowReportStatus to ask about a period.
 func (c *Client) GetReportingStatus(ctx context.Context) (*ReportingSummary, error) {
 	cfg := c.Config()
 	path := fmt.Sprintf("/info/status/registry/%s", url.PathEscape(cfg.TLD))
@@ -136,34 +85,21 @@ func (c *Client) GetReportingStatus(ctx context.Context) (*ReportingSummary, err
 	if err != nil {
 		return nil, err
 	}
-	// No Accept header. The draft requires none, and ICANN answered
-	// "406 Not Acceptable" to Accept: text/xml on the reporting status
-	// endpoint, so constraining the response is strictly worse than letting
-	// the server send what it sends. GetRyEscrowReportStatus, the one RRI GET
-	// proven against production, sends none either. doXMLGet parses the body
-	// as XML regardless of the Content-Type it arrives with.
+	// No Accept header: the draft requires none, and ICANN answers 406 to
+	// "Accept: text/xml" here because it cannot produce XML for this resource.
 
-	var doc xmlReportingSummary
-	if _, err := c.doXMLGet(req, &doc); err != nil {
+	raw, _, err := c.doGet(req)
+	if err != nil {
 		return nil, err
 	}
 
-	out := &ReportingSummary{
-		TLD:             doc.TLD,
-		CreationDate:    doc.CreationDate,
-		DepositSchedule: doc.DepositSchedule,
-		LastFullDate:    doc.LastFullDate,
-		Timestamp:       doc.Timestamp,
+	var doc jsonReportingSummary
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return nil, decodeError(req, "a reporting summary", raw, err)
 	}
-	for _, r := range doc.StatusReports.Reports {
-		st := ReportTypeStatus{Type: r.Type, Enabled: r.Enabled, Status: r.Status}
-		for _, i := range r.Issues.Issues {
-			// xmlIssue exists only to carry the XML attribute tags; its fields
-			// are the same as ReportingIssue's, so a conversion suffices and a
-			// field added to either side becomes a compile error here.
-			st.Issues = append(st.Issues, ReportingIssue(i))
-		}
-		out.Reports = append(out.Reports, st)
-	}
-	return out, nil
+	return &ReportingSummary{
+		TLD:     doc.TLD.Name,
+		Paths:   doc.Paths,
+		Created: doc.Created,
+	}, nil
 }

@@ -18,9 +18,12 @@ var rriReportingCmd = &cobra.Command{
 var rriReportingStatusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Show which reports ICANN considers outstanding",
-	Long: "Show ICANN's own reporting status for this TLD: which obligations are enabled,\n" +
-		"whether each is satisfied, and every dated issue recorded against it.\n\n" +
-		"This answers \"which reports does ICANN think are missing?\" without submitting anything.\n" +
+	Long: "Show ICANN's own reporting status for this TLD: each reporting obligation and\n" +
+		"whether ICANN is currently satisfied with it.\n\n" +
+		"This is a snapshot, not a history. The \"created\" field is the moment ICANN\n" +
+		"generated the answer, and there are no dates in it, so it says whether the TLD is\n" +
+		"square with ICANN right now — not which periods were missed. To ask about a\n" +
+		"particular period use `icann get monthly status` or `icann get escrow status`.\n\n" +
 		"With --issues-only the output is narrowed to the unsatisfactory obligations and the\n" +
 		"command exits non-zero when any remain, so it can be used as a check in a script.",
 	Example: "  icann get reporting status --tld example\n" +
@@ -45,11 +48,11 @@ var rriReportingStatusCmd = &cobra.Command{
 			return printJSON(cmd.OutOrStdout(), out)
 		}
 
-		out.Reports = out.Unsatisfactory()
+		out.Paths = out.Unsatisfactory()
 		if err := printJSON(cmd.OutOrStdout(), out); err != nil {
 			return err
 		}
-		if n := len(out.Reports); n > 0 {
+		if n := len(out.Paths); n > 0 {
 			// Silence cobra's usage dump: the report above is the message, and
 			// the non-zero exit is the point.
 			cmd.SilenceUsage = true

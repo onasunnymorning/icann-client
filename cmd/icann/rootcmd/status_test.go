@@ -30,36 +30,31 @@ func mosapiStateStub(t *testing.T, state http.HandlerFunc) *httptest.Server {
 	return srv
 }
 
-const reportingSummaryAllOK = `<?xml version="1.0" encoding="UTF-8"?>
-<rriReporting:summary
-  xmlns:rriReporting="urn:ietf:params:xml:ns:rriReporting-1.0"
-  xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
-  <rdeHeader:tld>example</rdeHeader:tld>
-  <rriReporting:statusReports>
-    <rriReporting:statusReport>
-      <rriReporting:type>Registry_Escrow_Report</rriReporting:type>
-      <rriReporting:enabled>true</rriReporting:enabled>
-      <rriReporting:status>ok</rriReporting:status>
-    </rriReporting:statusReport>
-  </rriReporting:statusReports>
-</rriReporting:summary>`
+const reportingSummaryAllOK = `{
+  "tld": {"name": "example"},
+  "created": "2026-09-15T00:44:03.230Z",
+  "paths": [
+    {"path": "Full", "status": "ok"},
+    {"path": "Diff", "status": "ok"},
+    {"path": "Dea", "status": "ok"},
+    {"path": "PRTR", "status": "ok"},
+    {"path": "RFAR", "status": "ok"},
+    {"path": "Registry", "status": "ok"}
+  ]
+}`
 
-const reportingSummaryWithIssue = `<?xml version="1.0" encoding="UTF-8"?>
-<rriReporting:summary
-  xmlns:rriReporting="urn:ietf:params:xml:ns:rriReporting-1.0"
-  xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
-  <rdeHeader:tld>example</rdeHeader:tld>
-  <rriReporting:statusReports>
-    <rriReporting:statusReport>
-      <rriReporting:type>Registry_Per_Registrar_Transactions_Report</rriReporting:type>
-      <rriReporting:enabled>true</rriReporting:enabled>
-      <rriReporting:status>unsatisfactory</rriReporting:status>
-      <rriReporting:issues>
-        <rriReporting:issue date="2026-06-01" description="No_Report_Received" />
-      </rriReporting:issues>
-    </rriReporting:statusReport>
-  </rriReporting:statusReports>
-</rriReporting:summary>`
+const reportingSummaryWithIssue = `{
+  "tld": {"name": "example"},
+  "created": "2026-09-15T00:44:03.230Z",
+  "paths": [
+    {"path": "Full", "status": "ok"},
+    {"path": "Diff", "status": "ok"},
+    {"path": "Dea", "status": "ok"},
+    {"path": "PRTR", "status": "unsatisfactory"},
+    {"path": "RFAR", "status": "ok"},
+    {"path": "Registry", "status": "ok"}
+  ]
+}`
 
 // runStatusCmd drives `icann status` against stub MOSAPI/RRI servers and
 // returns stdout and the command's error.
@@ -119,7 +114,7 @@ func jsonState(status string, services map[string]string) http.HandlerFunc {
 func TestStatusHumanSummaryHappyPath(t *testing.T) {
 	mosSrv := mosapiStateStub(t, jsonState("Up", map[string]string{"DNS": "Up"}))
 	rriSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/xml")
+		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, reportingSummaryAllOK)
 	}))
 	t.Cleanup(rriSrv.Close)
@@ -128,7 +123,7 @@ func TestStatusHumanSummaryHappyPath(t *testing.T) {
 	if err != nil {
 		t.Fatalf("RunE() error = %v, want nil", err)
 	}
-	for _, want := range []string{"TLD: example", "SLA monitoring:", "Up", "DNS:", "[ok] Registry escrow deposits"} {
+	for _, want := range []string{"TLD: example", "SLA monitoring:", "Up", "DNS:", "[ok] Full registry escrow deposit"} {
 		if !strings.Contains(out, want) {
 			t.Errorf("output = %q, want it to contain %q", out, want)
 		}
@@ -141,7 +136,7 @@ func TestStatusHumanSummaryHappyPath(t *testing.T) {
 func TestStatusReportsUnsatisfactoryObligation(t *testing.T) {
 	mosSrv := mosapiStateStub(t, jsonState("Up", map[string]string{"DNS": "Up"}))
 	rriSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/xml")
+		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, reportingSummaryWithIssue)
 	}))
 	t.Cleanup(rriSrv.Close)
@@ -153,11 +148,8 @@ func TestStatusReportsUnsatisfactoryObligation(t *testing.T) {
 	if !strings.Contains(err.Error(), "1 reporting obligation") {
 		t.Errorf("error = %q, want it to count the unsatisfactory obligation", err)
 	}
-	if !strings.Contains(out, "[UNSATISFACTORY] Monthly per-registrar transactions report") {
-		t.Errorf("output = %q, want the obligation flagged UNSATISFACTORY", out)
-	}
-	if !strings.Contains(out, "no report arrived for that date") {
-		t.Errorf("output = %q, want the issue translated to plain language", out)
+	if !strings.Contains(out, "[UNSATISFACTORY] Monthly per-registrar transactions report") || !strings.Contains(out, "(status: unsatisfactory)") {
+		t.Errorf("output = %q, want the obligation flagged UNSATISFACTORY with its status", out)
 	}
 }
 
@@ -166,7 +158,7 @@ func TestStatusReportsUnsatisfactoryObligation(t *testing.T) {
 func TestStatusSLADown(t *testing.T) {
 	mosSrv := mosapiStateStub(t, jsonState("Down", map[string]string{"DNS": "Down"}))
 	rriSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/xml")
+		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, reportingSummaryAllOK)
 	}))
 	t.Cleanup(rriSrv.Close)
@@ -194,7 +186,7 @@ func TestStatusPartialFailure(t *testing.T) {
 	if !strings.Contains(out, "SLA monitoring:\n  Up") {
 		t.Errorf("output = %q, want the SLA section to still report Up despite the other failure", out)
 	}
-	if !strings.Contains(out, "Reporting obligations:\n  could not check:") {
+	if !strings.Contains(out, "Reporting obligations") || !strings.Contains(out, "could not check:") {
 		t.Errorf("output = %q, want the reporting section to say it could not be checked", out)
 	}
 }
@@ -204,7 +196,7 @@ func TestStatusPartialFailure(t *testing.T) {
 func TestStatusJSON(t *testing.T) {
 	mosSrv := mosapiStateStub(t, jsonState("Up", map[string]string{"DNS": "Up"}))
 	rriSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/xml")
+		w.Header().Set("Content-Type", "application/json")
 		fmt.Fprint(w, reportingSummaryAllOK)
 	}))
 	t.Cleanup(rriSrv.Close)
@@ -223,7 +215,7 @@ func TestStatusJSON(t *testing.T) {
 	if got.SLA == nil || got.SLA.Status != "Up" {
 		t.Errorf("SLA = %+v, want status Up", got.SLA)
 	}
-	if got.Reporting == nil || len(got.Reporting.Reports) != 1 || got.Reporting.Reports[0].Type != rri.ReportingEscrowReport {
-		t.Errorf("Reporting = %+v, want one Registry_Escrow_Report entry", got.Reporting)
+	if got.Reporting == nil || len(got.Reporting.Paths) != 6 || got.Reporting.Paths[0].Path != rri.ReportingPathFull {
+		t.Errorf("Reporting = %+v, want six paths starting with Full", got.Reporting)
 	}
 }
