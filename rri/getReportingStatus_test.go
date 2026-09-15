@@ -10,15 +10,16 @@ import (
 	base "github.com/onasunnymorning/icann-client/client"
 )
 
-// TestGetReportingStatusRequestShape pins the path. Copying it from the
-// submission files is the likeliest way to get this wrong, and a stray
-// /report/ segment would probe a completely different resource.
+// TestGetReportingStatusRequestShape pins the path and the absence of an
+// Accept header. ICANN answers 406 Not Acceptable to "Accept: text/xml" here,
+// because it cannot produce XML for this resource, so sending one is a
+// regression rather than a preference.
 func TestGetReportingStatusRequestShape(t *testing.T) {
 	var gotMethod, gotPath, gotAccept string
 	c := newTestRRI(t, func(w http.ResponseWriter, r *http.Request) {
 		gotMethod, gotPath, gotAccept = r.Method, r.URL.Path, r.Header.Get("Accept")
-		w.Header().Set("Content-Type", "text/xml")
-		w.Write(readFixture(t, "reporting-summary-issues.xml"))
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(readFixture(t, "reporting-summary.json"))
 	})
 
 	if _, err := c.GetReportingStatus(t.Context()); err != nil {
@@ -30,19 +31,18 @@ func TestGetReportingStatusRequestShape(t *testing.T) {
 	if want := "/info/status/registry/example"; gotPath != want {
 		t.Errorf("path = %q, want %q", gotPath, want)
 	}
-	// ICANN answered 406 Not Acceptable to Accept: text/xml here, and the
-	// draft requires no Accept header at all, so sending one is a regression.
 	if gotAccept != "" {
-		t.Errorf("Accept = %q, want no Accept header: ICANN rejects a constrained one with 406", gotAccept)
+		t.Errorf("Accept = %q, want none: ICANN answers 406 to a constrained one", gotAccept)
 	}
 }
 
-// TestGetReportingStatusDecodes is the case that matters for a backfill: the
-// issue list is what says which dates ICANN is still missing.
+// TestGetReportingStatusDecodes uses a capture of a real production response.
+// ICANN serves JSON here, not the XML document the draft describes, and nests
+// the TLD as {"tld": {"name": ...}}.
 func TestGetReportingStatusDecodes(t *testing.T) {
 	c := newTestRRI(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "text/xml")
-		w.Write(readFixture(t, "reporting-summary-issues.xml"))
+		w.Header().Set("Content-Type", "application/json")
+		w.Write(readFixture(t, "reporting-summary.json"))
 	})
 
 	got, err := c.GetReportingStatus(t.Context())
@@ -51,22 +51,15 @@ func TestGetReportingStatusDecodes(t *testing.T) {
 	}
 
 	want := &ReportingSummary{
-		TLD:             "example",
-		CreationDate:    "2026-01-02T12:00:30.101Z",
-		DepositSchedule: DepositScheduleDaily,
-		LastFullDate:    "2026-01-01",
-		Timestamp:       "2026-01-02T12:00:00.000Z",
-		Reports: []ReportTypeStatus{
-			{
-				Type:    ReportingDEANotification,
-				Enabled: true,
-				Status:  ReportingStatusUnsatisfactory,
-				Issues: []ReportingIssue{
-					{Date: "2026-01-01", Description: IssueNoReportReceived},
-					{Date: "2025-12-30", Description: IssueInvalidDepositFull},
-				},
-			},
-			{Type: ReportingActivityReport, Enabled: true, Status: ReportingStatusOK},
+		TLD:     "example",
+		Created: "2026-09-15T00:44:03.230Z",
+		Paths: []ReportingPath{
+			{Path: ReportingPathFull, Status: ReportingStatusOK},
+			{Path: ReportingPathDiff, Status: ReportingStatusOK},
+			{Path: ReportingPathDea, Status: ReportingStatusOK},
+			{Path: ReportingPathPRTR, Status: "unsatisfactory"},
+			{Path: ReportingPathRFAR, Status: ReportingStatusOK},
+			{Path: ReportingPathRegistry, Status: ReportingStatusOK},
 		},
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -74,36 +67,27 @@ func TestGetReportingStatusDecodes(t *testing.T) {
 	}
 }
 
-// TestGetReportingStatusNamespaceIndependent guards the decode-only structs
-// against a server that declares the namespace as the default instead of using
-// a prefix. Both spellings are the same document, so both must decode
-// identically.
-//
-// Note what this does and does not prove. encoding/xml matches an unqualified
-// tag in any namespace, so it will not catch a tag that simply omits its
-// namespace. What it does catch is a tag given the wrong one — most usefully
-// tld, which lives in the rdeHeader namespace rather than the rriReporting one
-// that surrounds it, and which decodes to the empty string if that is
-// "tidied up".
-func TestGetReportingStatusNamespaceIndependent(t *testing.T) {
-	get := func(fixture string) *ReportingSummary {
-		c := newTestRRI(t, func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/xml")
-			w.Write(readFixture(t, fixture))
-		})
-		got, err := c.GetReportingStatus(t.Context())
-		if err != nil {
-			t.Fatalf("GetReportingStatus(%s) error = %v", fixture, err)
-		}
-		if len(got.Reports) == 0 {
-			t.Fatalf("GetReportingStatus(%s) decoded no status reports", fixture)
-		}
-		return got
+// TestGetReportingStatusDecodeFailure guards the error a malformed body
+// produces. Reporting it as an *client.HTTPError produced "http error: 200",
+// which describes a successful request and sends the reader looking in the
+// wrong place; the cause is the payload.
+func TestGetReportingStatusDecodeFailure(t *testing.T) {
+	c := newTestRRI(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`{"tld": "not the expected shape"}`))
+	})
+
+	got, err := c.GetReportingStatus(t.Context())
+	if err == nil {
+		t.Fatalf("GetReportingStatus() error = nil, got %+v", got)
 	}
-	prefixed := get("reporting-summary-issues.xml")
-	defaultNS := get("reporting-summary-default-ns.xml")
-	if !reflect.DeepEqual(prefixed, defaultNS) {
-		t.Errorf("prefixed =\n%+v\ndefault namespace =\n%+v", prefixed, defaultNS)
+	var he *base.HTTPError
+	if errors.As(err, &he) {
+		t.Errorf("error is a *client.HTTPError (%v); a 200 whose body will not decode is not an HTTP failure", err)
+	}
+	for _, want := range []string{"HTTP 200", "reporting summary", "not the expected shape"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("error %q does not mention %q", err, want)
+		}
 	}
 }
 
@@ -135,8 +119,6 @@ func TestGetReportingStatusRejection(t *testing.T) {
 	}
 }
 
-// TestGetReportingStatusTransportErrors checks that nothing decodes into an
-// empty-but-successful summary.
 func TestGetReportingStatusTransportErrors(t *testing.T) {
 	for name, h := range map[string]http.HandlerFunc{
 		"500": func(w http.ResponseWriter, r *http.Request) {
@@ -145,9 +127,8 @@ func TestGetReportingStatusTransportErrors(t *testing.T) {
 		"401 with no body": func(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusUnauthorized)
 		},
-		"200 with a login page": func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "text/html")
-			w.Write([]byte("<html><body>Please sign in</body></html>"))
+		"406 as production answered a constrained Accept": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotAcceptable)
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
@@ -166,36 +147,16 @@ func TestGetReportingStatusTransportErrors(t *testing.T) {
 
 // TestUnsatisfactory is what `get reporting status --issues-only` filters on.
 func TestUnsatisfactory(t *testing.T) {
-	s := &ReportingSummary{Reports: []ReportTypeStatus{
-		{Type: ReportingEscrowReport, Status: ReportingStatusOK},
-		{Type: ReportingActivityReport, Status: ReportingStatusUnsatisfactory},
+	s := &ReportingSummary{Paths: []ReportingPath{
+		{Path: ReportingPathFull, Status: ReportingStatusOK},
+		{Path: ReportingPathRFAR, Status: "unsatisfactory"},
 	}}
 	got := s.Unsatisfactory()
-	if len(got) != 1 || got[0].Type != ReportingActivityReport {
-		t.Errorf("Unsatisfactory() = %+v, want only the activity report", got)
+	if len(got) != 1 || got[0].Path != ReportingPathRFAR {
+		t.Errorf("Unsatisfactory() = %+v, want only RFAR", got)
 	}
-	clean := &ReportingSummary{Reports: []ReportTypeStatus{{Status: ReportingStatusOK}}}
+	clean := &ReportingSummary{Paths: []ReportingPath{{Status: ReportingStatusOK}}}
 	if len(clean.Unsatisfactory()) != 0 {
 		t.Errorf("Unsatisfactory() on a clean summary = %+v, want none", clean.Unsatisfactory())
-	}
-}
-
-// TestNamespaceConstantsMatchTags guards against drift. Struct tags must hold
-// the namespace as a literal, so the exported constants are a second copy of
-// the same URIs; this keeps the two from disagreeing.
-func TestNamespaceConstantsMatchTags(t *testing.T) {
-	for _, tc := range []struct {
-		name     string
-		field    reflect.StructTag
-		constant string
-	}{
-		{"rriReporting", reflect.TypeOf(xmlReportingSummary{}).Field(0).Tag, NamespaceRRIReporting},
-		{"rdeHeader", reflect.TypeOf(xmlReportingSummary{}).Field(1).Tag, NamespaceRdeHeader},
-		{"rriConformance", reflect.TypeOf(xmlConformance{}).Field(0).Tag, NamespaceRRIConformance},
-	} {
-		got, _ := tc.field.Lookup("xml")
-		if !strings.HasPrefix(got, tc.constant+" ") {
-			t.Errorf("%s: tag %q does not use the namespace constant %q", tc.name, got, tc.constant)
-		}
 	}
 }

@@ -1,0 +1,25 @@
+{
+  "tld" : {
+    "name" : "example"
+  },
+  "paths" : [ {
+    "path" : "Full",
+    "status" : "ok"
+  }, {
+    "path" : "Diff",
+    "status" : "ok"
+  }, {
+    "path" : "Dea",
+    "status" : "ok"
+  }, {
+    "path" : "PRTR",
+    "status" : "unsatisfactory"
+  }, {
+    "path" : "RFAR",
+    "status" : "ok"
+  }, {
+    "path" : "Registry",
+    "status" : "ok"
+  } ],
+  "created" : "2026-09-15T00:44:03.230Z"
+}
