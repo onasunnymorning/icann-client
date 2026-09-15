@@ -90,7 +90,7 @@ func TestConfig_Validate(t *testing.T) {
 			name: "missing certificate for TLSA",
 			config: Config{
 				TLD:         "example.com",
-				AuthType:    AUTH_TYPE_TLSA,
+				AuthType:    AUTH_TYPE_CERT,
 				KeyPEM:      "-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n",
 				Version:     "v2",
 				Entity:      "ry",
@@ -102,7 +102,7 @@ func TestConfig_Validate(t *testing.T) {
 			name: "missing key for TLSA",
 			config: Config{
 				TLD:            "example.com",
-				AuthType:       AUTH_TYPE_TLSA,
+				AuthType:       AUTH_TYPE_CERT,
 				CertificatePEM: "-----BEGIN CERTIFICATE-----\n...\n-----END CERTIFICATE-----\n",
 				Version:        "v2",
 				Entity:         "ry",

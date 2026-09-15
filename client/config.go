@@ -7,10 +7,10 @@ type Config struct {
 	TLD string
 	// AuthType is the type of authentication to use with the MOSAPI API. This should be one of validAuthTypes.
 	AuthType string
-	// CertificatePEM is the PEM-encoded certificate used for TLS client authentication when AuthType is AUTH_TYPE_TLSA.
+	// CertificatePEM is the PEM-encoded certificate used for TLS client authentication when AuthType is AUTH_TYPE_CERT.
 	// It is required in that case.
 	CertificatePEM string
-	// KeyPEM is the PEM-encoded private key used for TLS client authentication when AuthType is AUTH_TYPE_TLSA.
+	// KeyPEM is the PEM-encoded private key used for TLS client authentication when AuthType is AUTH_TYPE_CERT.
 	// It is required in that case.
 	KeyPEM string
 	// KeyPassphrase is the passphrase for decrypting an encrypted private key when KeyPEM is encrypted.
@@ -45,7 +45,7 @@ func (c *Config) Validate() error {
 		return ErrUnsupportedEntity
 	}
 
-	if c.AuthType == AUTH_TYPE_TLSA {
+	if c.AuthType == AUTH_TYPE_CERT {
 		if c.CertificatePEM == "" {
 			return ErrCertRequired
 		}

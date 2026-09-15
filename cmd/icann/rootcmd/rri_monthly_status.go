@@ -10,10 +10,9 @@ import (
 
 var rriMonthlyCmd = &cobra.Command{
 	Use:   "monthly",
-	Short: "Specification 3 monthly report operations",
-	// A group, not a command: reject an unknown subcommand instead of
-	// silently printing help and exiting 0.
-	Args: cobra.NoArgs,
+	Short: "Check Specification 3 monthly report status",
+	Args:  cobra.NoArgs,
+	RunE:  requireSubcommand,
 }
 
 var rriMonthlyStatusCmd = &cobra.Command{
@@ -22,6 +21,8 @@ var rriMonthlyStatusCmd = &cobra.Command{
 	Long: "Check whether ICANN holds a Specification 3 monthly report for the given month.\n\n" +
 		"--type is required: unlike `icann submit monthly`, there is no file here to detect it from.\n" +
 		"--month defaults to the previous complete month, since ICANN never accepts the current one.",
+	Example: "  icann get monthly status --tld example --type transactions\n" +
+		"  icann get monthly status --tld example --type activity --month 2026-05",
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		typ, err := parseReportTypeFlag(flagReportType)
@@ -70,4 +71,7 @@ func init() {
 	f := rriMonthlyStatusCmd.Flags()
 	f.StringVar(&flagReportType, "type", "", "Report type: transactions or activity (required)")
 	f.StringVar(&flagMonth, "month", "", "Month in YYYY-MM form (default: the previous complete month)")
+	if err := rriMonthlyStatusCmd.MarkFlagRequired("type"); err != nil {
+		panic(err)
+	}
 }

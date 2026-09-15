@@ -11,9 +11,8 @@ var flagIssuesOnly bool
 var rriReportingCmd = &cobra.Command{
 	Use:   "reporting",
 	Short: "ICANN's view of this TLD's reporting obligations",
-	// A group, not a command: reject an unknown subcommand instead of
-	// silently printing help and exiting 0.
-	Args: cobra.NoArgs,
+	Args:  cobra.NoArgs,
+	RunE:  requireSubcommand,
 }
 
 var rriReportingStatusCmd = &cobra.Command{
@@ -24,6 +23,8 @@ var rriReportingStatusCmd = &cobra.Command{
 		"This answers \"which reports does ICANN think are missing?\" without submitting anything.\n" +
 		"With --issues-only the output is narrowed to the unsatisfactory obligations and the\n" +
 		"command exits non-zero when any remain, so it can be used as a check in a script.",
+	Example: "  icann get reporting status --tld example\n" +
+		"  icann get reporting status --tld example --issues-only",
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := buildConfigFromInputs()
@@ -65,7 +66,8 @@ var rriConformanceCmd = &cobra.Command{
 		"ICANN answers HTTP 404 on servers that predate this endpoint, which the draft\n" +
 		"defines as conformance to two specific versions. Those are reported with\n" +
 		"\"inferred\": true rather than as an error.",
-	Args: cobra.NoArgs,
+	Example: "  icann get conformance --tld example",
+	Args:    cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := buildConfigFromInputs()
 		if err != nil {

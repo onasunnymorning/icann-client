@@ -43,7 +43,10 @@ func Load(profile, file string) (Record, error) {
 	// Read and pre-process the credentials to collapse multi-line PEM blocks
 	raw, readErr := os.ReadFile(file)
 	if readErr != nil {
-		return nil, readErr
+		if os.IsNotExist(readErr) {
+			return nil, fmt.Errorf("no credentials file at %s (set --credentials-file, ICANN_SHARED_CREDENTIALS_FILE, or create it); run \"icann config show\" to see what was resolved and why", file)
+		}
+		return nil, fmt.Errorf("reading credentials file %s: %w", file, readErr)
 	}
 	processed := preprocessPEM(string(raw))
 

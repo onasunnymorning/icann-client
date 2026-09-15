@@ -44,6 +44,9 @@ sequentially over a single connection: ICANN rate-limits on authentication, so
 Before a month's cut-off date a report may be replaced as many times as needed,
 so re-running a partial backfill is safe. After the cut-off ICANN rejects the
 replacement with result code 2002, which no client can work around.`,
+	Example: "  icann submit monthly example-transactions-202605.csv --tld example\n" +
+		"  icann submit monthly ./reports/ --tld example --dry-run\n" +
+		"  icann submit monthly report.csv --tld example --type activity --month 2026-05",
 	Args: cobra.MinimumNArgs(1),
 	RunE: runSubmitMonthly,
 }

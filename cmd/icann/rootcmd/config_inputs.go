@@ -22,7 +22,7 @@ var (
 	flagKeyPEM        string
 	flagKeyPassphrase string
 	flagVersion       string
-	flagEntity        string
+	flagRole          string
 )
 
 // buildConfigFromInputs resolves the configuration a command runs with, in
@@ -47,13 +47,17 @@ func buildConfigFromInputs() (base.Config, error) {
 	cfg.TLD = firstNonEmpty(flagTLD, rec["tld"], chosenProfile)
 	cfg.Environment = firstNonEmpty(flagEnv, rec["environment"], base.ENV_PROD)
 	cfg.Version = firstNonEmpty(flagVersion, rec["version"], base.V2)
-	cfg.Entity = firstNonEmpty(flagEntity, rec["entity"], base.EntityRegistry)
+	entity, err := roleToEntity(firstNonEmpty(flagRole, rec["role"], rec["entity"]))
+	if err != nil {
+		return base.Config{}, err
+	}
+	cfg.Entity = entity
 	cfg.AuthType = deriveAuthType(flagAuth, rec)
 	switch cfg.AuthType {
 	case base.AUTH_TYPE_BASIC:
 		cfg.Username = firstNonEmpty(flagUser, rec["username"])
 		cfg.Password = firstNonEmpty(flagPass, rec["password"])
-	case base.AUTH_TYPE_TLSA:
+	case base.AUTH_TYPE_CERT:
 		cfg.CertificatePEM = expandEscapes(firstNonEmpty(flagCertPEM, rec["certificate_pem"], rec["certificate"]))
 		cfg.KeyPEM = expandEscapes(firstNonEmpty(flagKeyPEM, rec["key_pem"], rec["key"]))
 		cfg.KeyPassphrase = firstNonEmpty(flagKeyPassphrase, rec["key_passphrase"])
@@ -87,10 +91,27 @@ func expandEscapes(s string) string {
 	return s
 }
 
+// roleToEntity translates the plain-language --role value (or its
+// credentials-file equivalent) into the entity segment ICANN's API expects.
+// "ry"/"rr" are accepted too, both because they are the values already found
+// in older credentials files and because they are literally what appears in
+// MOSAPI/RRI's own URLs, so a registry operator reading ICANN's own docs will
+// recognize them.
+func roleToEntity(role string) (string, error) {
+	switch strings.ToLower(role) {
+	case "", "registry", base.EntityRegistry:
+		return base.EntityRegistry, nil
+	case "registrar", base.EntityRegistrar:
+		return base.EntityRegistrar, nil
+	default:
+		return "", fmt.Errorf("invalid --role %q: only \"registry\" or \"registrar\" are supported", role)
+	}
+}
+
 // deriveAuthType chooses the authentication type based on precedence:
 // 1) explicit flag (--auth)
 // 2) credentials file key (auth_type)
-// 3) presence of PEM fields implies TLSA
+// 3) presence of PEM fields implies a client certificate
 // 4) default to BASIC
 func deriveAuthType(explicit string, rec map[string]string) string {
 	if explicit != "" {
@@ -100,7 +121,7 @@ func deriveAuthType(explicit string, rec map[string]string) string {
 		return v
 	}
 	if rec["certificate_pem"] != "" || rec["key_pem"] != "" {
-		return base.AUTH_TYPE_TLSA
+		return base.AUTH_TYPE_CERT
 	}
 	return base.AUTH_TYPE_BASIC
 }

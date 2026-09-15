@@ -11,17 +11,20 @@ var (
 	flagEndDate   string
 )
 
-var metricaCmd = &cobra.Command{
-	Use:   "metrica",
-	Short: "Domain METRICA reports",
-	// A group, not a command: reject an unknown subcommand instead of
-	// silently printing help and exiting 0.
+var abuseCmd = &cobra.Command{
+	Use:   "abuse",
+	Short: "Domain-abuse reports for the TLD",
+	Long: `Domain-abuse reports for the TLD, as measured by ICANN's own monitoring
+(known there as METRICA, formerly DAAR): a periodic list of domains ICANN
+considers abused, broken down by threat type.`,
 	Args: cobra.NoArgs,
+	RunE: requireSubcommand,
 }
 
-var metricaLatestCmd = &cobra.Command{
-	Use:   "latest",
-	Short: "Get latest METRICA domain list report",
+var abuseLatestCmd = &cobra.Command{
+	Use:     "latest",
+	Short:   "Get the most recent domain-abuse report",
+	Example: "  icann get abuse latest --tld example",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := buildConfigFromInputs()
 		if err != nil {
@@ -39,10 +42,11 @@ var metricaLatestCmd = &cobra.Command{
 	},
 }
 
-var metricaDateCmd = &cobra.Command{
-	Use:   "date <YYYY-MM-DD>",
-	Short: "Get METRICA domain list report for a date",
-	Args:  cobra.ExactArgs(1),
+var abuseDateCmd = &cobra.Command{
+	Use:     "date <YYYY-MM-DD>",
+	Short:   "Get the domain-abuse report for a specific date",
+	Example: "  icann get abuse date 2026-06-01 --tld example",
+	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		date := args[0]
 		cfg, err := buildConfigFromInputs()
@@ -61,9 +65,10 @@ var metricaDateCmd = &cobra.Command{
 	},
 }
 
-var metricaListsCmd = &cobra.Command{
-	Use:   "lists",
-	Short: "List available METRICA reports",
+var abuseListsCmd = &cobra.Command{
+	Use:     "lists",
+	Short:   "List the domain-abuse reports ICANN has available",
+	Example: "  icann get abuse lists --tld example --start-date 2026-01-01 --end-date 2026-06-01",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		cfg, err := buildConfigFromInputs()
 		if err != nil {
@@ -82,12 +87,12 @@ var metricaListsCmd = &cobra.Command{
 }
 
 func init() {
-	getCmd.AddCommand(metricaCmd)
-	metricaCmd.AddCommand(metricaLatestCmd)
-	metricaCmd.AddCommand(metricaDateCmd)
-	metricaCmd.AddCommand(metricaListsCmd)
+	getCmd.AddCommand(abuseCmd)
+	abuseCmd.AddCommand(abuseLatestCmd)
+	abuseCmd.AddCommand(abuseDateCmd)
+	abuseCmd.AddCommand(abuseListsCmd)
 
-	// Reuse global flags for auth/env/tld/etc. Add METRICA-specific flags
-	metricaListsCmd.Flags().StringVar(&flagStartDate, "start-date", "", "Filter: start date (YYYY-MM-DD)")
-	metricaListsCmd.Flags().StringVar(&flagEndDate, "end-date", "", "Filter: end date (YYYY-MM-DD)")
+	// Reuse global flags for auth/env/tld/etc. Add abuse-report-specific flags.
+	abuseListsCmd.Flags().StringVar(&flagStartDate, "start-date", "", "Filter: start date (YYYY-MM-DD)")
+	abuseListsCmd.Flags().StringVar(&flagEndDate, "end-date", "", "Filter: end date (YYYY-MM-DD)")
 }

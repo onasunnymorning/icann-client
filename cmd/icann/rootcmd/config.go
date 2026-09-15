@@ -17,9 +17,8 @@ import (
 var configCmd = &cobra.Command{
 	Use:   "config",
 	Short: "Inspect resolved configuration and credentials",
-	// A group, not a command: reject an unknown subcommand instead of
-	// silently printing help and exiting 0.
-	Args: cobra.NoArgs,
+	Args:  cobra.NoArgs,
+	RunE:  requireSubcommand,
 }
 
 var configShowCmd = &cobra.Command{
@@ -33,6 +32,8 @@ eight hex digits of its SHA-256, which is enough to confirm it matches the
 value you expect without putting it on screen:
 
     printf '%s' 'the-password' | shasum -a 256 | cut -c1-8`,
+	Example: "  icann config show --tld example\n" +
+		"  icann config show --profile example --credentials-file ./credentials",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		out := cmd.OutOrStdout()
 
@@ -60,7 +61,7 @@ value you expect without putting it on screen:
 
 		fmt.Fprintf(out, "tld:               %s\n", cfg.TLD)
 		fmt.Fprintf(out, "environment:       %s\n", cfg.Environment)
-		fmt.Fprintf(out, "entity:            %s\n", cfg.Entity)
+		fmt.Fprintf(out, "role:              %s\n", displayRole(cfg.Entity))
 		fmt.Fprintf(out, "api version:       %s\n", cfg.Version)
 		fmt.Fprintf(out, "auth type:         %s\n", cfg.AuthType)
 
@@ -71,7 +72,7 @@ value you expect without putting it on screen:
 			if warn := suspiciousSecret(cfg.Password); warn != "" {
 				fmt.Fprintf(out, "                   note: %s\n", warn)
 			}
-		case base.AUTH_TYPE_TLSA:
+		case base.AUTH_TYPE_CERT:
 			fmt.Fprintf(out, "certificate_pem:   %s\n", describePEM(cfg.CertificatePEM))
 			fmt.Fprintf(out, "key_pem:           %s\n", describePEM(cfg.KeyPEM))
 			fmt.Fprintf(out, "key_passphrase:    %s\n", describeSecret(cfg.KeyPassphrase))
@@ -164,6 +165,17 @@ func displayOrNone(s string) string {
 		return "(not set)"
 	}
 	return s
+}
+
+// displayRole renders the resolved entity segment back as the plain-language
+// --role value a user would recognize.
+func displayRole(entity string) string {
+	switch entity {
+	case base.EntityRegistrar:
+		return "registrar (rr)"
+	default:
+		return "registry (ry)"
+	}
 }
 
 func init() {

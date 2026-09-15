@@ -14,22 +14,27 @@ var (
 
 var rriEscrowCmd = &cobra.Command{
 	Use:   "escrow",
-	Short: "Registry escrow operations",
-	// A group, not a command: reject an unknown subcommand instead of
-	// silently printing help and exiting 0.
-	Args: cobra.NoArgs,
+	Short: "Check registry escrow deposit status",
+	Args:  cobra.NoArgs,
+	RunE:  requireSubcommand,
 }
 
 var rriEscrowStatusCmd = &cobra.Command{
 	Use:   "status",
-	Short: "Check Ry Escrow report status for a date",
+	Short: "Check whether ICANN holds an escrow deposit for a date",
+	Long: "Check whether ICANN holds a registry data escrow deposit for the given date.\n\n" +
+		"--date defaults to today, since \"did today's deposit land?\" is the\n" +
+		"question this command exists to answer.",
+	Example: "  icann get escrow status --tld example\n" +
+		"  icann get escrow status --tld example --date 2026-06-01",
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if flagDate == "" {
-			return fmt.Errorf("--date is required (YYYY-MM-DD)")
+		date := flagDate
+		if date == "" {
+			date = time.Now().Format("2006-01-02")
 		}
-		dt, err := time.Parse("2006-01-02", flagDate)
+		dt, err := time.Parse("2006-01-02", date)
 		if err != nil {
-			return fmt.Errorf("invalid --date: %w", err)
+			return fmt.Errorf("--date %q is not a valid date; use YYYY-MM-DD", date)
 		}
 
 		cfg, err := buildConfigFromInputs()
@@ -53,5 +58,5 @@ func init() {
 	getCmd.AddCommand(rriEscrowCmd)
 	rriEscrowCmd.AddCommand(rriEscrowStatusCmd)
 
-	rriEscrowStatusCmd.Flags().StringVar(&flagDate, "date", "", "Report date (YYYY-MM-DD)")
+	rriEscrowStatusCmd.Flags().StringVar(&flagDate, "date", "", "Deposit date (YYYY-MM-DD, default: today)")
 }
