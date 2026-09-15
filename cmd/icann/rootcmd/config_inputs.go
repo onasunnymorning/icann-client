@@ -3,7 +3,7 @@ package rootcmd
 import (
 	"encoding/json"
 	"fmt"
-	"os"
+	"io"
 	"strings"
 
 	base "github.com/onasunnymorning/icann-client/client"
@@ -105,10 +105,12 @@ func deriveAuthType(explicit string, rec map[string]string) string {
 	return base.AUTH_TYPE_BASIC
 }
 
-// printJSON writes v to stdout as indented JSON. Every command prints its
-// result this way, so the output shape is defined in one place.
-func printJSON(v any) error {
-	enc := json.NewEncoder(os.Stdout)
+// printJSON writes v as indented JSON. Every command prints its result this
+// way, so the output shape is defined in one place. It takes the writer rather
+// than reaching for os.Stdout so that a test can capture what a command
+// printed via cmd.SetOut.
+func printJSON(w io.Writer, v any) error {
+	enc := json.NewEncoder(w)
 	enc.SetIndent("", "  ")
 	return enc.Encode(v)
 }

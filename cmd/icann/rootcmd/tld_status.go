@@ -21,7 +21,7 @@ var tldStatusCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(sr)
+		return printJSON(cmd.OutOrStdout(), sr)
 	},
 }
 

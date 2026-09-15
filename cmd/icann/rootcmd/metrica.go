@@ -35,7 +35,7 @@ var metricaLatestCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(out)
+		return printJSON(cmd.OutOrStdout(), out)
 	},
 }
 
@@ -57,7 +57,7 @@ var metricaDateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(out)
+		return printJSON(cmd.OutOrStdout(), out)
 	},
 }
 
@@ -77,7 +77,7 @@ var metricaListsCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(out)
+		return printJSON(cmd.OutOrStdout(), out)
 	},
 }
 

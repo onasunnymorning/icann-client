@@ -45,7 +45,7 @@ var rriEscrowStatusCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return printJSON(out)
+		return printJSON(cmd.OutOrStdout(), out)
 	},
 }
 
