@@ -248,9 +248,6 @@ One-time setup:
 
 Users then run `brew tap onasunnymorning/tap && brew install icann`.
 
-Notes:
-- The legacy command groups `mosapi` and `rri` are deprecated; use the flattened commands under `icann get ...` instead.
-
 ### Build
 
 ```
@@ -364,6 +361,67 @@ Output is pretty-printed JSON of the `StateResponse`.
 			"Status": "received"
 		}
 		```
+
+		- Ask ICANN which reports it considers outstanding
+
+		```
+		./icann get reporting status --tld example \
+			--credentials-file ~/.icann/credentials
+		```
+
+		This is ICANN's own view of the TLD: which reporting obligations are
+		enabled, whether each is satisfied, and every dated issue recorded
+		against it. It answers "which reports does ICANN think are missing?"
+		without submitting anything.
+
+		```json
+		{
+		  "tld": "example",
+		  "depositSchedule": "Daily",
+		  "lastFullDate": "2026-01-01",
+		  "reports": [
+		    {
+		      "type": "DEA_Notification",
+		      "enabled": true,
+		      "status": "unsatisfactory",
+		      "issues": [
+		        { "date": "2026-01-01", "description": "No_Report_Received" }
+		      ]
+		    },
+		    {
+		      "type": "Registry_Functions_Activity_Report",
+		      "enabled": true,
+		      "status": "ok"
+		    }
+		  ]
+		}
+		```
+
+		Add `--issues-only` to narrow the output to the unsatisfactory
+		obligations and exit non-zero while any remain, so the command works as
+		a check in a script rather than only as something to read.
+
+		- Check whether ICANN holds a monthly report
+
+		```
+		./icann get monthly status --tld example \
+			--type activity --month 2026-08
+		```
+
+		`--type` is required — unlike `icann submit monthly` there is no CSV
+		here to detect it from, and guessing would probe the wrong endpoint,
+		which reads as a genuine "not received". `--month` defaults to the
+		previous complete month, since ICANN never accepts the current one.
+
+		- Show which RRI specifications ICANN implements
+
+		```
+		./icann get conformance --tld example
+		```
+
+		ICANN answers HTTP 404 on servers that predate this endpoint, which the
+		draft defines as conformance to two specific versions. Those are
+		reported with `"inferred": true` rather than as an error.
 
 		- Submit RDE (registry escrow) reports
 
@@ -513,7 +571,7 @@ Notes:
 
 - The module follows SemVer. While in v0, minor versions (v0.x) may include breaking changes.
 - Public API stability will be guaranteed starting at v1.0.0. We’ll avoid breaking changes in v0 unless necessary and document them in the Changelog.
-- CLI deprecations: legacy command groups `mosapi`/`rri` remain available but hidden and deprecated; use the flattened `icann get ...` commands.
+- CLI: the legacy `mosapi` and `rri` command groups were removed in favour of the flattened `icann get ...` commands, as was the undocumented `icann get state` (use `icann get tld status`, which prints the same thing).
 - The module path is `github.com/onasunnymorning/icann-client` and will remain for v1. Major versions `v2+` will use the Go Modules path suffix convention.
 
 See `CHANGELOG.md` for detailed changes.
@@ -521,7 +579,10 @@ See `CHANGELOG.md` for detailed changes.
 ## Roadmap
 
 - High-level MOSAPI resource methods (e.g., health, reports, domain operations)
-- Further RRI interfaces (DNS/DNSSEC reports)
+- RRI interfaces not yet implemented, deliberately deferred rather than overlooked:
+  - `GET /slam-probe-nodes/list` — the city/IPv4/IPv6 list of ICANN's SLA monitoring probes, useful for firewall allowlists
+  - `/maintenance-window/<tld>/<service>/<scheduleId>` (PUT, GET, DELETE, and the list form) — the first write endpoints that build XML rather than pass a file through, with UUIDv4 schedule ids, eight result codes of their own and a destructive DELETE
+  - the escrow-agent side (`POST /report/escrow-agent-notification/<tld>`, `GET /info/status/escrow-agent-notification/<tld>`) — data escrow agent functionality, not registry operator
 - Retries and backoff (error types landed: `client.HTTPError`, `rri.ResultError`)
 - Context-aware helpers and request builders
 
