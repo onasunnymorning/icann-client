@@ -6,6 +6,16 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Removed
+- **Breaking:** `icann get state`. It was an undocumented leftover from before the CLI was flattened that called the same endpoint as `icann get tld status` and printed the same JSON, while resolving credentials through its own copy of the logic. Use `icann get tld status`; the output is unchanged.
+- **Breaking:** the `icann mosapi` and `icann rri` command groups. Both were hidden and deprecated with zero subcommands, so they only ever printed help.
+- Group commands now reject an unknown subcommand instead of printing help and exiting 0, so a script still calling a removed command fails rather than silently writing help text into its output.
+
+### Added
+- `icann get reporting status` and `rri.Client.GetReportingStatus` — `GET /info/status/registry/<tld>`, ICANN's own view of which reporting obligations are enabled, whether each is satisfied, and every dated issue recorded against it. This answers which reports ICANN considers outstanding without submitting one. `--issues-only` narrows the output to the unsatisfactory obligations and exits non-zero while any remain.
+- `icann get conformance` and `rri.Client.GetConformanceVersion` — `GET /info/status/conformance-version`. A 404 is a documented answer rather than a failure: it means the server predates the endpoint and conforms to `draft-lozano-icann-registry-interfaces-25` and `draft-icann-registrar-interfaces-15`, which are returned with `inferred: true`.
+- `icann get monthly status` — exposes `rri.Client.GetMonthlyReportStatus`, which existed but was reachable only through `submit monthly --skip-received`. `--type` is required; `--month` defaults to the previous complete month.
+
 ### Fixed
 - Every MOSAPI command (`icann get tld status`, `icann get metrica latest|date|lists`) failed with `401 ... TLS-Client-Authentication or Session Cookie` when using basic authentication. MOSAPI is session based: credentials are accepted only at the unversioned `/<entity>/<tld>/login` endpoint, and the versioned endpoints authenticate with the session cookie it returns. The client went straight to the versioned endpoint with an `Authorization` header, which MOSAPI does not accept there, and had no cookie jar to hold a session even if one had been issued. RRI is unaffected — it authenticates per request and has no login step.
 

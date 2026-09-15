@@ -93,6 +93,7 @@ func resetSubmitFlags() {
 	flagNoPreflight, flagSkipReceived, flagDelay = false, false, 0
 	flagTLD, flagAuth, flagUser, flagPass, flagEnv = "", "", "", "", ""
 	flagMonth, flagReportType = "", ""
+	flagIssuesOnly = false
 }
 
 // respondCode writes an IIRDEA result envelope.

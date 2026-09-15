@@ -1,9 +1,7 @@
 package rootcmd
 
 import (
-	"encoding/json"
 	"fmt"
-	"os"
 	"time"
 
 	"github.com/onasunnymorning/icann-client/rri"
@@ -17,6 +15,9 @@ var (
 var rriEscrowCmd = &cobra.Command{
 	Use:   "escrow",
 	Short: "Registry escrow operations",
+	// A group, not a command: reject an unknown subcommand instead of
+	// silently printing help and exiting 0.
+	Args: cobra.NoArgs,
 }
 
 var rriEscrowStatusCmd = &cobra.Command{
@@ -44,9 +45,7 @@ var rriEscrowStatusCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "  ")
-		return enc.Encode(out)
+		return printJSON(cmd.OutOrStdout(), out)
 	},
 }
 

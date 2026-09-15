@@ -116,3 +116,46 @@ func ExampleClient_SubmitMonthlyReport() {
 	fmt.Println(res.Type, res.Month, res.ResultCode)
 	// Output: transactions 2025-01 1000
 }
+
+func ExampleClient_GetReportingStatus() {
+	// Fake RRI reporting status endpoint.
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/info/status/registry/example" {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		w.Header().Set("Content-Type", "text/xml")
+		fmt.Fprint(w, `<?xml version="1.0" encoding="UTF-8"?>
+<rriReporting:summary
+  xmlns:rriReporting="urn:ietf:params:xml:ns:rriReporting-1.0"
+  xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
+  <rdeHeader:tld>example</rdeHeader:tld>
+  <rriReporting:statusReports>
+    <rriReporting:statusReport>
+      <rriReporting:type>Registry_Functions_Activity_Report</rriReporting:type>
+      <rriReporting:enabled>true</rriReporting:enabled>
+      <rriReporting:status>unsatisfactory</rriReporting:status>
+      <rriReporting:issues>
+        <rriReporting:issue date="2026-08-01" description="No_Report_Received" />
+      </rriReporting:issues>
+    </rriReporting:statusReport>
+  </rriReporting:statusReports>
+</rriReporting:summary>`)
+	}))
+	defer srv.Close()
+
+	c, _ := rri.New(base.Config{TLD: "example", AuthType: base.AUTH_TYPE_BASIC, Username: "u", Password: "p"})
+	_ = c.WithBaseURL(srv.URL)
+
+	summary, err := c.GetReportingStatus(context.Background())
+	if err != nil {
+		fmt.Println("error:", err)
+		return
+	}
+	for _, r := range summary.Unsatisfactory() {
+		for _, issue := range r.Issues {
+			fmt.Printf("%s: %s on %s\n", r.Type, issue.Description, issue.Date)
+		}
+	}
+	// Output: Registry_Functions_Activity_Report: No_Report_Received on 2026-08-01
+}

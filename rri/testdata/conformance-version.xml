@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rriConformance:rriConformance xmlns:rriConformance="urn:ietf:params:xml:ns:rriConformance-1.0">
+  <rriConformance:specification>draft-lozano-icann-registry-interfaces-26</rriConformance:specification>
+  <rriConformance:specification>draft-icann-registrar-interfaces-16</rriConformance:specification>
+</rriConformance:rriConformance>

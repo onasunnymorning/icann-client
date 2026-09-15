@@ -2,12 +2,6 @@
 package rootcmd
 
 import (
-	"encoding/json"
-	"fmt"
-	"os"
-
-	base "github.com/onasunnymorning/icann-client/client"
-	"github.com/onasunnymorning/icann-client/cmd/icann/internal/cred"
 	"github.com/onasunnymorning/icann-client/mosapi"
 	"github.com/spf13/cobra"
 )
@@ -20,6 +14,9 @@ var (
 var metricaCmd = &cobra.Command{
 	Use:   "metrica",
 	Short: "Domain METRICA reports",
+	// A group, not a command: reject an unknown subcommand instead of
+	// silently printing help and exiting 0.
+	Args: cobra.NoArgs,
 }
 
 var metricaLatestCmd = &cobra.Command{
@@ -38,9 +35,7 @@ var metricaLatestCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "  ")
-		return enc.Encode(out)
+		return printJSON(cmd.OutOrStdout(), out)
 	},
 }
 
@@ -62,9 +57,7 @@ var metricaDateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "  ")
-		return enc.Encode(out)
+		return printJSON(cmd.OutOrStdout(), out)
 	},
 }
 
@@ -84,50 +77,8 @@ var metricaListsCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		enc := json.NewEncoder(os.Stdout)
-		enc.SetIndent("", "  ")
-		return enc.Encode(out)
+		return printJSON(cmd.OutOrStdout(), out)
 	},
-}
-
-// buildConfigFromInputs consolidates flags and credentials resolution (shared with state command pattern)
-func buildConfigFromInputs() (base.Config, error) {
-	// Choose profile: explicit --profile, otherwise default to --tld if provided.
-	chosenProfile := profileFlag
-	if chosenProfile == "" && flagTLD != "" {
-		chosenProfile = flagTLD
-	}
-	rec, loadErr := cred.Load(chosenProfile, credentialsFileFlag)
-	if loadErr != nil && flagAuth == "" && flagUser == "" && flagPass == "" && flagCertPEM == "" && flagKeyPEM == "" {
-		return base.Config{}, loadErr
-	}
-	if rec == nil {
-		rec = map[string]string{}
-	}
-
-	cfg := base.Config{}
-	cfg.TLD = firstNonEmpty(flagTLD, rec["tld"], chosenProfile)
-	cfg.Environment = firstNonEmpty(flagEnv, rec["environment"], base.ENV_PROD)
-	cfg.Version = firstNonEmpty(flagVersion, rec["version"], base.V2)
-	cfg.Entity = firstNonEmpty(flagEntity, rec["entity"], base.EntityRegistry)
-	cfg.AuthType = deriveAuthType(flagAuth, rec)
-	switch cfg.AuthType {
-	case base.AUTH_TYPE_BASIC:
-		cfg.Username = firstNonEmpty(flagUser, rec["username"])
-		cfg.Password = firstNonEmpty(flagPass, rec["password"])
-	case base.AUTH_TYPE_TLSA:
-		cfg.CertificatePEM = expandEscapes(firstNonEmpty(flagCertPEM, rec["certificate_pem"], rec["certificate"]))
-		cfg.KeyPEM = expandEscapes(firstNonEmpty(flagKeyPEM, rec["key_pem"], rec["key"]))
-		cfg.KeyPassphrase = firstNonEmpty(flagKeyPassphrase, rec["key_passphrase"])
-	}
-
-	if cfg.TLD == "" {
-		return base.Config{}, fmt.Errorf("tld is required (provide --tld, credentials tld, or use a profile named after the TLD)")
-	}
-	if err := cfg.Validate(); err != nil {
-		return base.Config{}, err
-	}
-	return cfg, nil
 }
 
 func init() {

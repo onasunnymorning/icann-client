@@ -7,6 +7,9 @@ import "github.com/spf13/cobra"
 var getCmd = &cobra.Command{
 	Use:   "get",
 	Short: "Get resources",
+	// A group, not a command: reject an unknown subcommand instead of
+	// silently printing help and exiting 0.
+	Args: cobra.NoArgs,
 }
 
 func init() { RootCmd.AddCommand(getCmd) }
