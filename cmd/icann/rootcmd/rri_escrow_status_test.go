@@ -111,3 +111,10 @@ func TestEscrowNotificationStatusCmd(t *testing.T) {
 		t.Errorf("output = %s", out)
 	}
 }
+
+func TestEscrowNotificationStatusAlias(t *testing.T) {
+	found, _, err := rriEscrowCmd.Find([]string{"dea-status"})
+	if err != nil || found != rriEscrowNotificationStatusCmd {
+		t.Fatalf("dea-status resolves to %v, %v", found, err)
+	}
+}

@@ -16,7 +16,7 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 ## [Unreleased]
 
 ### Added
-- `icann get escrow notification-status` and `rri.Client.GetEscrowNotificationStatus` — `GET /info/status/escrow-agent-notification/<tld>` (draft Section 6.2): ICANN's processed view of the escrow agent notifications, with the deposit schedule, last validated FULL date and per-date issues. The draft specifies XML, but ICANN serves JSON on the sibling registry status interface and this one has not been seen in production, so the body is decoded as either. The draft defines the interface for escrow agents; registry credentials may be refused. The agent-side `POST` stays deferred.
+- `icann get escrow notification-status` (alias `dea-status`) and `rri.Client.GetEscrowNotificationStatus` — `GET /info/status/escrow-agent-notification/<tld>` (draft Section 6.2): ICANN's processed view of the escrow agent notifications, with the deposit schedule, last validated FULL date and per-date issues. The draft specifies XML, but ICANN serves JSON on the sibling registry status interface and this one has not been seen in production, so the body is decoded as either. The draft defines the interface for escrow agents; registry credentials may be refused. The agent-side `POST` stays deferred.
 
 ## [v0.5.0] - 2026-09-14
 

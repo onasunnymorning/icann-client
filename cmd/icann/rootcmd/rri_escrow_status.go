@@ -124,8 +124,11 @@ var rriEscrowNotificationsCmd = &cobra.Command{
 }
 
 var rriEscrowNotificationStatusCmd = &cobra.Command{
-	Use:   "notification-status",
-	Short: "Show ICANN's reporting status for escrow agent notifications",
+	Use: "notification-status",
+	// "DEA" (data escrow agent) is the name ICANN's own reporting status uses
+	// for this obligation, so operators who know it by that name can type it.
+	Aliases: []string{"dea-status"},
+	Short:   "Show ICANN's reporting status for escrow agent notifications",
 	Long: "Show ICANN's reporting status for this TLD's data escrow agent notifications: whether\n" +
 		"ICANN is satisfied, the deposit schedule, the last validated FULL deposit, and the\n" +
 		"dates it has a complaint about (no report received, invalid deposit, ...).\n\n" +
