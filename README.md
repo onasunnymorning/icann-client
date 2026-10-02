@@ -403,6 +403,19 @@ Output is pretty-printed JSON of the `StateResponse`.
 		}
 		```
 
+		- Ask ICANN whether it is satisfied with the escrow agent notifications
+
+		```
+		./icann get escrow notification-status --tld example
+		```
+
+		ICANN's view after processing (`ok` or `unsatisfactory`), the deposit
+		schedule, the last validated FULL deposit, and the dates it has a complaint
+		about (`No_Report_Received`, `Invalid_Deposit_Full`, ...). Use
+		`get escrow notifications` to see what ICANN received instead. The draft
+		defines this interface for escrow agents, so registry operator credentials
+		may be refused.
+
 		- Ask ICANN which reports it considers outstanding
 
 		```
@@ -629,7 +642,7 @@ See `CHANGELOG.md` for detailed changes.
 - RRI interfaces not yet implemented, deliberately deferred rather than overlooked:
   - `GET /slam-probe-nodes/list` — the city/IPv4/IPv6 list of ICANN's SLA monitoring probes, useful for firewall allowlists
   - `/maintenance-window/<tld>/<service>/<scheduleId>` (PUT, GET, DELETE, and the list form) — the first write endpoints that build XML rather than pass a file through, with UUIDv4 schedule ids, eight result codes of their own and a destructive DELETE
-  - the escrow-agent side (`POST /report/escrow-agent-notification/<tld>`, `GET /info/status/escrow-agent-notification/<tld>`) — data escrow agent functionality, not registry operator
+  - the escrow-agent submission side (`POST /report/escrow-agent-notification/<tld>`) — data escrow agent functionality, not registry operator
 - Retries and backoff (error types landed: `client.HTTPError`, `rri.ResultError`)
 - Context-aware helpers and request builders
 

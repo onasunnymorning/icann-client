@@ -93,3 +93,28 @@ func TestEscrowNotificationsBadDate(t *testing.T) {
 		t.Fatalf("err = %v", err)
 	}
 }
+
+func TestEscrowNotificationStatusCmd(t *testing.T) {
+	out, paths, err := runGetCmd(t, rriEscrowNotificationStatusCmd, nil, func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(`<s:summary xmlns:s="urn:ietf:params:xml:ns:rriReporting-1.0" xmlns:h="urn:ietf:params:xml:ns:rdeHeader-1.0">
+<h:tld>example</h:tld><s:creationDate>2026-01-02T12:00:30Z</s:creationDate><s:statusReports><s:statusReport>
+<s:type>DEA_Notification</s:type><s:enabled>true</s:enabled><s:status>unsatisfactory</s:status>
+<s:issues><s:issue date="2026-01-01" description="No_Report_Received"/></s:issues></s:statusReport></s:statusReports></s:summary>`))
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(paths) != 1 || paths[0] != "GET /info/status/escrow-agent-notification/example" {
+		t.Errorf("paths = %v", paths)
+	}
+	if !strings.Contains(string(out), `"status": "unsatisfactory"`) || !strings.Contains(string(out), `"description": "No_Report_Received"`) {
+		t.Errorf("output = %s", out)
+	}
+}
+
+func TestEscrowNotificationStatusAlias(t *testing.T) {
+	found, _, err := rriEscrowCmd.Find([]string{"dea-status"})
+	if err != nil || found != rriEscrowNotificationStatusCmd {
+		t.Fatalf("dea-status resolves to %v, %v", found, err)
+	}
+}
