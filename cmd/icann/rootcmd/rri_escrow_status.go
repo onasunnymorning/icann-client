@@ -123,8 +123,37 @@ var rriEscrowNotificationsCmd = &cobra.Command{
 	},
 }
 
+var rriEscrowNotificationStatusCmd = &cobra.Command{
+	Use:   "notification-status",
+	Short: "Show ICANN's reporting status for escrow agent notifications",
+	Long: "Show ICANN's reporting status for this TLD's data escrow agent notifications: whether\n" +
+		"ICANN is satisfied, the deposit schedule, the last validated FULL deposit, and the\n" +
+		"dates it has a complaint about (no report received, invalid deposit, ...).\n\n" +
+		"This is a snapshot of ICANN's view after processing, not a list of what it received;\n" +
+		"for that use `icann get escrow notifications`. The draft defines this interface for\n" +
+		"escrow agents, so registry operator credentials may be refused.",
+	Example: "  icann get escrow notification-status --tld example",
+	Args:    cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		cfg, err := buildConfigFromInputs()
+		if err != nil {
+			return err
+		}
+		cli, err := newRRIClient(cfg)
+		if err != nil {
+			return err
+		}
+		out, err := cli.GetEscrowNotificationStatus(cmd.Context())
+		if err != nil {
+			return err
+		}
+		return printJSON(cmd.OutOrStdout(), out)
+	},
+}
+
 func init() {
 	getCmd.AddCommand(rriEscrowCmd)
+	rriEscrowCmd.AddCommand(rriEscrowNotificationStatusCmd)
 	rriEscrowCmd.AddCommand(rriEscrowStatusCmd)
 	rriEscrowCmd.AddCommand(rriEscrowNotificationsCmd)
 
