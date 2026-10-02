@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rdeReports:reports
+    xmlns:rdeReports="urn:ietf:params:xml:ns:rdeReports-1.0"
+    xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0"
+    xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
+    <rdeReports:receivedReport>
+        <rdeReports:received>2025-10-17T01:34:13.741Z</rdeReports:received>
+        <rdeReport:report
+            xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0"
+            xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
+            <rdeReport:id>20251017002</rdeReport:id>
+            <rdeReport:version>1</rdeReport:version>
+            <rdeReport:rydeSpecEscrow>
+                RFC8909
+            </rdeReport:rydeSpecEscrow>
+            <rdeReport:rydeSpecMapping>
+                RFC9022
+            </rdeReport:rydeSpecMapping>
+            <rdeReport:resend>0</rdeReport:resend>
+            <rdeReport:crDate>2025-10-17T01:20:00.0Z</rdeReport:crDate>
+            <rdeReport:kind>FULL</rdeReport:kind>
+            <rdeReport:watermark>2025-10-17T00:00:00Z</rdeReport:watermark>
+            <rdeHeader:header>
+                <rdeHeader:tld>test</rdeHeader:tld>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">5</rdeHeader:count>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeHost-1.0">2</rdeHeader:count>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeContact-1.0">3</rdeHeader:count>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">1</rdeHeader:count>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">1</rdeHeader:count>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeNNDN-1.0">1</rdeHeader:count>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeEppParams-1.0">1</rdeHeader:count>
+            </rdeHeader:header>
+        </rdeReport:report>
+    </rdeReports:receivedReport>
+    <rdeReports:receivedReport>
+        <rdeReports:received>2025-10-17T00:32:13.741Z</rdeReports:received>
+        <rdeReport:report
+            xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0"
+            xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
+            <rdeReport:id>20251017001</rdeReport:id>
+            <rdeReport:version>1</rdeReport:version>
+            <rdeReport:rydeSpecEscrow>
+                RFC8909
+            </rdeReport:rydeSpecEscrow>
+            <rdeReport:rydeSpecMapping>
+                RFC9022
+            </rdeReport:rydeSpecMapping>
+            <rdeReport:resend>0</rdeReport:resend>
+            <rdeReport:crDate>2025-10-17T00:15:00.0Z</rdeReport:crDate>
+            <rdeReport:kind>FULL</rdeReport:kind>
+            <rdeReport:watermark>2025-10-17T00:00:00Z</rdeReport:watermark>
+            <rdeHeader:header>
+                <rdeHeader:tld>test</rdeHeader:tld>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">4</rdeHeader:count>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeHost-1.0">2</rdeHeader:count>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeContact-1.0">3</rdeHeader:count>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">1</rdeHeader:count>
+                <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeEppParams-1.0">1</rdeHeader:count>
+            </rdeHeader:header>
+        </rdeReport:report>
+    </rdeReports:receivedReport>
+</rdeReports:reports>

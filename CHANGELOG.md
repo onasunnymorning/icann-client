@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on Keep a Changelog, and this project adheres to Semantic Versioning.
 
+## [Unreleased]
+
+### Added
+- Support for the GET method that `draft-lozano-icann-registry-interfaces-27` adds to the two escrow monitoring interfaces (Sections 2.3.1 and 2.3.2). Unlike HEAD, GET returns the time ICANN received each item:
+  - `icann get escrow status --details` and `rri.Client.GetRyEscrowReports` — every escrow report ICANN holds for a date, with its `received` timestamp and report metadata. Without `--details` the command is unchanged and still uses HEAD.
+  - `icann get escrow notifications` and `rri.Client.GetEscrowNotifications` — the escrow agent notifications ICANN received for a date (`DVPN`, `DRFN`, ...), each with its `received` timestamp.
+  - `rri.ResultDateBeforeGET` (result code 2214), returned for a date before the draft reached production, with a hint explaining it.
+  - HTTP 404 on either interface is an empty list, not an error; a 404 carrying an HTML or error body is still an error.
+
 ## [v0.5.0] - 2026-09-14
 
 ### Changed

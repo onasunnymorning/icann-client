@@ -111,6 +111,13 @@ func ParseRyEscrowReport(b []byte) (*ReportMeta, error) {
 		return nil, fmt.Errorf("parsing RDE report: %w", err)
 	}
 
+	return doc.meta()
+}
+
+// meta converts a decoded <rdeReport:report> into its ReportMeta, enforcing the
+// elements ICANN itself requires. It is shared by pre-flight parsing and by the
+// monitoring interfaces, which return reports ICANN received.
+func (doc *xmlReport) meta() (*ReportMeta, error) {
 	m := &ReportMeta{
 		ID:      strings.TrimSpace(doc.ID),
 		Version: doc.Version,
@@ -152,16 +159,22 @@ func ParseRyEscrowReport(b []byte) (*ReportMeta, error) {
 
 // parseReportTime parses an rdeReport timestamp, naming the field on failure.
 func parseReportTime(field, v string) (time.Time, error) {
+	return parseTimestamp("rdeReport:"+field, "the report", v)
+}
+
+// parseTimestamp parses an ICANN timestamp, naming the element and the document
+// it belongs to on failure.
+func parseTimestamp(element, in, v string) (time.Time, error) {
 	v = strings.TrimSpace(v)
 	if v == "" {
-		return time.Time{}, fmt.Errorf("rdeReport:%s is missing from the report", field)
+		return time.Time{}, fmt.Errorf("%s is missing from %s", element, in)
 	}
 	for _, layout := range []string{time.RFC3339, time.RFC3339Nano, "2006-01-02"} {
 		if t, err := time.Parse(layout, v); err == nil {
 			return t.UTC(), nil
 		}
 	}
-	return time.Time{}, fmt.Errorf("rdeReport:%s: cannot parse %q as a timestamp", field, v)
+	return time.Time{}, fmt.Errorf("%s: cannot parse %q as a timestamp", element, v)
 }
 
 // ValidationOptions controls the pre-flight checks performed on a report

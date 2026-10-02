@@ -377,6 +377,32 @@ Output is pretty-printed JSON of the `StateResponse`.
 		}
 		```
 
+		- See when ICANN received each escrow deposit, and what your escrow agent said
+
+		```
+		./icann get escrow status --tld example --date 2026-10-01 --details
+		./icann get escrow notifications --tld example --date 2026-10-01
+		```
+
+		`--details` swaps the HEAD presence check for a GET that lists every deposit
+		ICANN holds for the date, with the time ICANN received it. `notifications`
+		does the same for escrow agent notifications (`DVPN` = deposit verified,
+		`DRFN` = no new deposit received). Both are empty lists when ICANN holds
+		nothing for the date, and both need `draft-lozano-icann-registry-interfaces-27`
+		to be live: for an earlier date ICANN answers result code 2214, which the
+		CLI explains.
+
+		```json
+		{
+		  "tld": "example",
+		  "date": "2026-10-01",
+		  "reports": [
+		    { "received": "2026-10-01T01:34:13.741Z",
+		      "report": { "id": "20261001002", "kind": "FULL", "watermark": "2026-10-01T00:00:00Z", ... } }
+		  ]
+		}
+		```
+
 		- Ask ICANN which reports it considers outstanding
 
 		```

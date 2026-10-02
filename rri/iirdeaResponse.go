@@ -31,6 +31,7 @@ const (
 	ResultRCDNMismatch          = 2210 // a count element carries an unexpected rcdn attribute
 	ResultDuplicateCount        = 2211 // several count elements share uri, rcdn and registrarId
 	ResultInvalidLabel          = 2212 // an invalid label or domain name syntax was found
+	ResultDateBeforeGET         = 2214 // the queried date predates the production deployment of the GET monitoring interfaces
 
 	// Codes specific to the Specification 3 monthly CSV reports (Section 3).
 	ResultIncorrectTotals        = 2101 // the totals line does not match the sum of the data lines
@@ -76,6 +77,8 @@ func ResultHint(code int) string {
 		return "remove the duplicate <count> element; only one is allowed per uri/rcdn/registrarId combination"
 	case ResultInvalidLabel:
 		return "a domain or label in the report fails basic name syntax; check the entries ICANN's own message points to"
+	case ResultDateBeforeGET:
+		return "ICANN serves report and notification details only for dates after draft -27 went live in production; ask about a later date, or drop --details to use the status check"
 	case ResultIncorrectTotals:
 		return "the totals line does not match the sum of the data lines; run with --dry-run to see which column is off"
 	case ResultRegistrarNotAccredited:

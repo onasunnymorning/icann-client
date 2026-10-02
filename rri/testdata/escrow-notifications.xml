@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<rdeNotifications:notifications
+  xmlns:iirdea="urn:ietf:params:xml:ns:iirdea-1.0"
+  xmlns:rdeNotifications="urn:ietf:params:xml:ns:rdeNotifications-1.0"
+  xmlns:rdeNotification="urn:ietf:params:xml:ns:rdeNotification-1.0"
+  xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0"
+  xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
+  <rdeNotifications:receivedNotification>
+    <rdeNotifications:received>2025-10-17T06:30:31.0Z</rdeNotifications:received>
+    <rdeNotification:notification
+      xmlns:rdeNotification="urn:ietf:params:xml:ns:rdeNotification-1.0"
+      xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0"
+      xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
+      <rdeNotification:deaName>Escrow Agent Inc.</rdeNotification:deaName>
+      <rdeNotification:version>1</rdeNotification:version>
+      <rdeNotification:repDate>2025-10-17</rdeNotification:repDate>
+      <rdeNotification:status>DVPN</rdeNotification:status>
+      <rdeNotification:reDate>2025-10-17T03:15:00.0Z</rdeNotification:reDate>
+      <rdeNotification:vaDate>2025-10-17T05:15:00.0Z</rdeNotification:vaDate>
+      <rdeNotification:lastFullDate>2025-10-17</rdeNotification:lastFullDate>
+      <rdeReport:report>
+        <rdeReport:id>20251017001</rdeReport:id>
+        <rdeReport:version>1</rdeReport:version>
+        <rdeReport:rydeSpecEscrow>RFC8909</rdeReport:rydeSpecEscrow>
+        <rdeReport:rydeSpecMapping>RFC9022</rdeReport:rydeSpecMapping>
+        <rdeReport:resend>0</rdeReport:resend>
+        <rdeReport:crDate>2025-10-17T01:15:00.0Z</rdeReport:crDate>
+        <rdeReport:kind>FULL</rdeReport:kind>
+        <rdeReport:watermark>2025-10-17T00:00:00Z</rdeReport:watermark>
+        <rdeHeader:header>
+          <rdeHeader:tld>test</rdeHeader:tld>
+          <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeDomain-1.0">1</rdeHeader:count>
+          <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeHost-1.0">3</rdeHeader:count>
+          <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeContact-1.0">1</rdeHeader:count>
+          <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeRegistrar-1.0">3</rdeHeader:count>
+          <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeIDN-1.0">1</rdeHeader:count>
+          <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeNNDN-1.0">10</rdeHeader:count>
+          <rdeHeader:count uri="urn:ietf:params:xml:ns:rdeEppParams-1.0">0</rdeHeader:count>
+        </rdeHeader:header>
+      </rdeReport:report>
+    </rdeNotification:notification>
+  </rdeNotifications:receivedNotification>
+  <rdeNotifications:receivedNotification>
+    <rdeNotifications:received>2025-10-17T01:00:31.0Z</rdeNotifications:received>
+    <rdeNotification:notification
+      xmlns:rdeNotification="urn:ietf:params:xml:ns:rdeNotification-1.0"
+      xmlns:rdeReport="urn:ietf:params:xml:ns:rdeReport-1.0"
+      xmlns:rdeHeader="urn:ietf:params:xml:ns:rdeHeader-1.0">
+      <rdeNotification:deaName>Escrow Agent Inc.</rdeNotification:deaName>
+      <rdeNotification:version>1</rdeNotification:version>
+      <rdeNotification:repDate>2025-10-17</rdeNotification:repDate>
+      <rdeNotification:status>DRFN</rdeNotification:status>
+      <rdeNotification:lastFullDate>2025-10-14</rdeNotification:lastFullDate>
+    </rdeNotification:notification>
+  </rdeNotifications:receivedNotification>
+</rdeNotifications:notifications>
